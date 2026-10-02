@@ -6,6 +6,9 @@
 |---|---|
 | `infra/sandbox/` | M1 沙盒链路验证脚本（AGS / E2B 兼容） |
 | `M1-沙盒链路验证结论.md` | M1 结论：沙盒 / 浏览器 / CDP / NoVNC |
-| `M2-持久化验证结论.md` | M2 结论：`pause/resume` + 平台 COS 同步 |
+| `M2-持久化验证结论.md` | M2 结论：AGS 原生 COS 存储挂载 |
+| `M3-认证验证结论.md` | M3 结论：JWT **RS256 + 公开 JWKS**（`/auth/v1/certs`）本地验签 |
+| `M4-数据库验证结论.md` | M4 结论：沙盒**不能直连 PG**；用 **PostgREST + JWT + RLS**；**无法建 role** |
+| `M6-发布验证结论.md` | M6 结论：CloudRun **支持 WebSocket**；经**公网 PostgREST** 访问库 |
 
 验证脚本会加载 `*.env`（已被 git 忽略），产物写入各自的 `artifacts/`。
