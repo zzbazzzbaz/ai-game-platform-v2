@@ -24,5 +24,8 @@ build/
 .idea/
 .vscode/
 
+# 含密钥的环境记录
+docs/chat/10.2/env.md
+
 # M1 验证产物
 test/infra/sandbox/artifacts/
