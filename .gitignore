@@ -26,6 +26,7 @@ build/
 
 # 含密钥的环境记录
 docs/chat/10.2/env.md
+docs/chat/10.8/env.md
 
 # M1 验证产物
 test/infra/sandbox/artifacts/
