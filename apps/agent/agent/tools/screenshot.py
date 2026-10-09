@@ -4,7 +4,7 @@ from e2b import Sandbox
 from langchain_core.tools import BaseTool
 from langchain_core.tools import tool as make_tool
 
-from agent.core.constants import NOVNC_PORT, SCREENSHOT_PATH, WORK_ROOT
+from agent.core.constants import GAME_LOCAL_URL, NOVNC_PORT, SCREENSHOT_PATH, WORK_ROOT
 
 
 def _cdp_target(sandbox: Sandbox) -> tuple[str, dict[str, str]]:
@@ -33,6 +33,9 @@ def make_screenshot_tool(*, sandbox: Sandbox) -> BaseTool:
                     page = contexts[0].pages[0]
                 else:
                     page = browser.new_page()
+                # 重新加载到最新构建（esbuild 重建后页面不会自动刷新）
+                page.goto(GAME_LOCAL_URL, wait_until="load", timeout=20000)
+                page.wait_for_timeout(1500)
                 shot = page.screenshot()
                 title = page.title()
                 sandbox.files.write(SCREENSHOT_PATH, shot)
