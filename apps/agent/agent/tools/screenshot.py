@@ -7,10 +7,11 @@ from langchain_core.tools import tool as make_tool
 from agent.core.constants import NOVNC_PORT, SCREENSHOT_PATH, WORK_ROOT
 
 
-def _cdp_url(sandbox: Sandbox) -> str:
+def _cdp_target(sandbox: Sandbox) -> tuple[str, dict[str, str]]:
     host = sandbox.get_host(NOVNC_PORT)
-    token = sandbox._envd_access_token  # AGS 未暴露公开取址
-    return f"https://{host}/cdp?access_token={token}"
+    token = str(sandbox._envd_access_token)  # AGS 未暴露公开取址
+    url = f"https://{host}/cdp?access_token={token}"
+    return url, {"X-Access-Token": token}
 
 
 def make_screenshot_tool(*, sandbox: Sandbox) -> BaseTool:
@@ -24,8 +25,9 @@ def make_screenshot_tool(*, sandbox: Sandbox) -> BaseTool:
         except ImportError:
             return "截图失败：缺少 playwright 依赖"
         try:
+            cdp_url, headers = _cdp_target(sandbox)
             with sync_playwright() as pw:
-                browser = pw.chromium.connect_over_cdp(_cdp_url(sandbox))
+                browser = pw.chromium.connect_over_cdp(cdp_url, headers=headers)
                 contexts = browser.contexts
                 if contexts and contexts[0].pages:
                     page = contexts[0].pages[0]

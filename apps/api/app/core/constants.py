@@ -15,24 +15,27 @@ SANDBOX_CDP_PORT = 9000
 GAME_SERVER_PORT = 3000
 
 # 沙盒内游戏服务命令（保活 / 重启）
+# 注意：pgrep/pkill 的 pattern 用 `[s]erver` 转义，避免匹配到执行本脚本的 bash 自身。
 GAME_SERVER_ENSURE_COMMAND = "\n".join(
     [
         f"cd {SANDBOX_WORK_ROOT}",
         "mkdir -p .runtime",
-        'if ! pgrep -f "server/index.js" >/dev/null; then',
+        'if ! pgrep -f "[d]ev.mjs" >/dev/null; then',
         "  nohup npm run dev > .runtime/server.log 2>&1 &",
-        "  sleep 3",
+        "  sleep 4",
         "fi",
-        "tail -n 20 .runtime/server.log",
+        "tail -n 20 .runtime/server.log 2>/dev/null || true",
     ]
 )
 GAME_SERVER_RESTART_COMMAND = "\n".join(
     [
         f"cd {SANDBOX_WORK_ROOT}",
         "mkdir -p .runtime",
-        'pkill -f "server/index.js" || true',
+        'pkill -f "[d]ev.mjs" || true',
+        'pkill -f "[s]erver/index.js" || true',
+        "sleep 1",
         "nohup npm run dev > .runtime/server.log 2>&1 &",
-        "sleep 3",
+        "sleep 4",
         "tail -n 80 .runtime/server.log",
     ]
 )

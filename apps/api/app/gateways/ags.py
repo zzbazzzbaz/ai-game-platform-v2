@@ -8,6 +8,7 @@
 import json
 
 from e2b import Sandbox
+from e2b.sandbox.commands.command_handle import CommandExitException
 
 from app.core.constants import (
     SANDBOX_CDP_PORT,
@@ -77,6 +78,9 @@ class AgsGateway:
         sandbox = self._require(sandbox_id)
         try:
             result = sandbox.commands.run(command, timeout=timeout, user=user)
+        except CommandExitException as e:
+            # e2b 对非 0 退出码抛异常；统一转成 (code, stdout, stderr) 返回
+            return e.exit_code, e.stdout or "", e.stderr or ""
         except Exception as e:
             raise UpstreamError(f"沙盒命令执行失败：{e}") from e
         return result.exit_code, result.stdout or "", result.stderr or ""
