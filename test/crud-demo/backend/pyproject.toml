@@ -1,0 +1,10 @@
+[project]
+name = "crud-demo-backend"
+version = "0.1.0"
+description = "学习用：FastAPI + PostgreSQL 的 CRUD REST API"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "psycopg[binary,pool]>=3.2",
+]
