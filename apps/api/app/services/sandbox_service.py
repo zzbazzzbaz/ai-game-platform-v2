@@ -81,7 +81,12 @@ def ensure_for_thread(
         game_repository.set_sandbox_id(session, game_id=game.game_id, sandbox_id=sandbox_id)
     _ensure_init(sandbox_id=sandbox_id, ags=ags, cos=cos)
     _ensure_server_running(sandbox_id=sandbox_id, ags=ags)
-    return {"game_id": game.game_id, "sandbox_id": sandbox_id, "created": created}
+    return {
+        "thread_id": thread_id,
+        "game_id": game.game_id,
+        "sandbox_id": sandbox_id,
+        "created": created,
+    }
 
 
 def restart_server(*, thread_id: uuid.UUID, session: Session, ags: AgsGateway) -> dict:
