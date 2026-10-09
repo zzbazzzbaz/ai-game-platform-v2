@@ -8,6 +8,14 @@ __pycache__/
 venv/
 .uv/
 *.egg-info/
+.ruff_cache/
+.pytest_cache/
+
+# 本地开发 JWT 密钥
+.keys/
+
+# LangGraph dev 缓存
+.langgraph_api/
 
 # Node
 node_modules/

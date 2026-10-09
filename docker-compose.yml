@@ -1,0 +1,23 @@
+name: ai-game-platform-dev
+
+# 开发阶段：平台元数据库（本地）。
+# 游戏数据库（每游戏 game_{sid} + role）在公网 VPS PG 上，由 api 开通。
+services:
+  postgres:
+    image: postgres:17.11
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
