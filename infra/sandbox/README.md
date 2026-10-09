@@ -1,0 +1,29 @@
+# 沙盒资产（infra/sandbox）
+
+AGS 沙盒（`aio` 预置类型）的初始化资产；**不是**独立工程，无包管理文件。
+
+| 文件 | 作用 |
+|---|---|
+| `init.sh` | 沙盒初始化：解 skills → `/opt/skills`、装依赖 → `/opt/deps`、软链 `/workspace/work/node_modules`（幂等，api 下发执行） |
+| `assets/skills/` | Phaser 技能库（deepagents 经沙盒 backend 读取 `SKILL.md`；旧项目资产迁入） |
+| `publish_assets.py` | 把 `packages/game-template`、skills、init.sh 发布到 COS `platform/` 前缀 |
+
+## 发布
+
+```bash
+make sandbox-assets-publish
+```
+
+发布后 api 的运行期行为：
+
+1. **建游戏**：COS `platform/game-template/**` → `games/{game_id}/`（工作区种入模板）；
+2. **进会话（ensure）**：AGS 创建/复用沙盒（`x-mounts.subPath = game_id`）→
+   下载 `platform/sandbox/skills.tar.gz` 写入沙盒 `/tmp` → 执行 `platform/sandbox/init.sh`；
+3. 确保游戏服务进程运行（`npm run dev`，日志在 `.runtime/server.log`）。
+
+## 注意（坑）
+
+- 挂载前 COS 的 `games/{game_id}/` 与 `input/` 目录必须已存在（api 放 `.keep` 占位）。
+- `node_modules` 不放 COS 挂载层（大量小文件性能差），统一 `/opt/deps` + 软链。
+- 沙盒内访问挂载点必须 `user="root"`（api/agent 已统一）。
+- Tool 级 `StorageMounts` 创建后不可改（需要调整时新建 Tool 并更新 `AGS_TEMPLATE`）。

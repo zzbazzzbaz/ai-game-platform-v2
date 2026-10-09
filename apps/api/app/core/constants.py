@@ -14,6 +14,29 @@ SANDBOX_NOVNC_PORT = 9000
 SANDBOX_CDP_PORT = 9000
 GAME_SERVER_PORT = 3000
 
+# 沙盒内游戏服务命令（保活 / 重启）
+GAME_SERVER_ENSURE_COMMAND = "\n".join(
+    [
+        f"cd {SANDBOX_WORK_ROOT}",
+        "mkdir -p .runtime",
+        'if ! pgrep -f "server/index.js" >/dev/null; then',
+        "  nohup npm run dev > .runtime/server.log 2>&1 &",
+        "  sleep 3",
+        "fi",
+        "tail -n 20 .runtime/server.log",
+    ]
+)
+GAME_SERVER_RESTART_COMMAND = "\n".join(
+    [
+        f"cd {SANDBOX_WORK_ROOT}",
+        "mkdir -p .runtime",
+        'pkill -f "server/index.js" || true',
+        "nohup npm run dev > .runtime/server.log 2>&1 &",
+        "sleep 3",
+        "tail -n 80 .runtime/server.log",
+    ]
+)
+
 # COS 平台资产（infra/sandbox/publish_assets.py 发布）
 COS_TEMPLATE_PREFIX = "game-template"
 COS_SKILLS_ARCHIVE = "sandbox/skills.tar.gz"

@@ -13,10 +13,11 @@ from sqlalchemy.orm import Session
 from app.core.constants import (
     COS_INIT_SCRIPT,
     COS_SKILLS_ARCHIVE,
+    GAME_SERVER_ENSURE_COMMAND,
     GAME_SERVER_PORT,
+    GAME_SERVER_RESTART_COMMAND,
     SANDBOX_INIT_MARKER,
     SANDBOX_SKILLS_TMP,
-    SANDBOX_WORK_ROOT,
 )
 from app.core.exceptions import NotFoundError, UpstreamError, ValidationError
 from app.gateways.ags import AgsGateway
@@ -26,17 +27,6 @@ from app.models.game import Game
 from app.models.thread import GameThread
 from app.repositories.game_repository import game_repository
 from app.repositories.thread_repository import thread_repository
-
-_RESTART_COMMAND = "\n".join(
-    [
-        f"cd {SANDBOX_WORK_ROOT}",
-        "mkdir -p .runtime",
-        'pkill -f "server/index.js" || true',
-        "nohup npm run dev > .runtime/server.log 2>&1 &",
-        "sleep 3",
-        "tail -n 80 .runtime/server.log",
-    ]
-)
 
 
 def _resolve(thread_id: uuid.UUID, session: Session) -> tuple[GameThread, Game]:
@@ -64,6 +54,11 @@ def _ensure_init(*, sandbox_id: str, ags: AgsGateway, cos: CosGateway) -> None:
         raise UpstreamError(f"沙盒初始化失败：{(err or out)[-500:]}")
 
 
+def _ensure_server_running(*, sandbox_id: str, ags: AgsGateway) -> None:
+    """确保游戏服务进程在运行（规格 §6.2 生命周期）。"""
+    ags.run(sandbox_id, GAME_SERVER_ENSURE_COMMAND, timeout=180)
+
+
 def ensure_for_thread(
     *,
     thread_id: uuid.UUID,
@@ -85,6 +80,7 @@ def ensure_for_thread(
     if game.sandbox_id != sandbox_id:
         game_repository.set_sandbox_id(session, game_id=game.game_id, sandbox_id=sandbox_id)
     _ensure_init(sandbox_id=sandbox_id, ags=ags, cos=cos)
+    _ensure_server_running(sandbox_id=sandbox_id, ags=ags)
     return {"game_id": game.game_id, "sandbox_id": sandbox_id, "created": created}
 
 
@@ -92,7 +88,7 @@ def restart_server(*, thread_id: uuid.UUID, session: Session, ags: AgsGateway) -
     _, game = _resolve(thread_id, session)
     if not game.sandbox_id:
         raise ValidationError("沙盒尚未创建，请先进入会话")
-    code, out, err = ags.run(game.sandbox_id, _RESTART_COMMAND, timeout=120)
+    code, out, err = ags.run(game.sandbox_id, GAME_SERVER_RESTART_COMMAND, timeout=120)
     return {"ok": code == 0, "log_tail": (out or err)[-2000:]}
 
 
