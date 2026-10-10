@@ -1,6 +1,6 @@
-"""发布（M6）：沙盒校验 → 打包 → COS 版本包 → CloudRun 部署 → 版本落库（规格 §7.1/§7.4）。
+"""发布（M6）：沙盒校验 → 打包 → COS 版本包 → CloudRun 部署 → 版本落库。
 
-调用链已实测（`test/infra/cloudbase/api_deploy_verify.py`）：tcb:DescribeCloudBaseBuildService
+调用链（已实测）：tcb:DescribeCloudBaseBuildService
 → PUT 源码 zip → tcbr:CreateCloudRunServer / UpdateCloudRunServer → 轮询默认域名 → 健康检查。
 """
 
@@ -50,7 +50,7 @@ def _collect_workspace(*, game_id: str, cos: CosGateway) -> dict[str, bytes]:
 
 
 def _validate_sources(files: dict[str, bytes]) -> None:
-    """拒绝硬编码连接串 / 本地地址（规格 §7.4）。"""
+    """拒绝硬编码连接串 / 本地地址。"""
     bad: list[str] = []
     for rel, data in files.items():
         if not rel.lower().endswith(PUBLISH_TEXT_SUFFIXES):
@@ -84,7 +84,7 @@ def _build_tar(files: dict[str, bytes]) -> bytes:
 
 
 def _verify_in_sandbox(*, sandbox_id: str | None, ags: AgsGateway) -> None:
-    """有沙盒则做真实构建与健康校验（规格 §7.4）；沙盒不可用则跳过（Dockerfile 会再构建）。"""
+    """有沙盒则做真实构建与健康校验；沙盒不可用则跳过（Dockerfile 会再构建）。"""
     if not sandbox_id or ags.connect(sandbox_id) is None:
         return
     ags.run(sandbox_id, GAME_SERVER_ENSURE_COMMAND, timeout=180)

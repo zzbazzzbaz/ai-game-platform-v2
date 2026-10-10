@@ -1,6 +1,6 @@
 """腾讯云 COS 网关（独立桶：工作区 / 素材 / 版本包 / 平台资产）。
 
-前缀约定（规格 §5.3）：
+前缀约定：
 - 游戏资产：`games/{game_id}/**`（AGS StorageMount 同一前缀，读写实时互见）
 - 版本包：`games/{game_id}/versions/{seq}.tar`
 - 平台资产：`platform/**`（由 sandbox/publish_assets.py 发布）

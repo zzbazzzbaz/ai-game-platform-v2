@@ -1,5 +1,5 @@
 // 平台维护文件：游戏服务（Express + Socket.IO + 静态托管 + 健康检查 + 优雅退出）。
-// 生成区代码请放 src/、shared/，不要修改本文件（规格 R-AGT-1）。
+// 生成区代码请放 src/、shared/，不要修改本文件。
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

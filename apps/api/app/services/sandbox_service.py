@@ -55,7 +55,7 @@ def _ensure_init(*, sandbox_id: str, ags: AgsGateway, cos: CosGateway) -> None:
 
 
 def _ensure_server_running(*, sandbox_id: str, ags: AgsGateway) -> None:
-    """确保游戏服务进程在运行（规格 §6.2 生命周期）。"""
+    """确保游戏服务进程在运行。"""
     ags.run(sandbox_id, GAME_SERVER_ENSURE_COMMAND, timeout=180)
 
 

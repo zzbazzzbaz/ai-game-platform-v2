@@ -1,6 +1,6 @@
 """AGS 沙盒网关（E2B 兼容协议；每游戏一个；COS 存储挂载）。
 
-- 数据面 = E2B 官方 SDK；`metadata["x-mounts"]` 为 AGS 私有扩展（细节见 `docs/chat/10.8/03-验证结论与坑.md`）。
+- 数据面 = E2B 官方 SDK；`metadata["x-mounts"]` 为 AGS 私有扩展。
 - 沙盒内访问挂载点必须以 `user="root"` 执行；挂载路径 `/workspace/{work,input}`。
 - 实例 ID 落 `games.sandbox_id`，创建 / 复用；沙盒有生命周期（timeout）。
 """
@@ -100,7 +100,7 @@ class AgsGateway:
             return None
 
     def preview_url(self, sandbox_id: str) -> str:
-        """开发期预览：直连 NoVNC（含令牌；上线前改同源反代，R-PRE-1/2/4）。"""
+        """开发期预览：直连 NoVNC（含令牌；上线前改同源反代）。"""
         sandbox = self._require(sandbox_id)
         host = sandbox.get_host(SANDBOX_NOVNC_PORT)
         token = sandbox._envd_access_token

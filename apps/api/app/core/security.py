@@ -1,4 +1,4 @@
-"""自建认证：RS256 JWT 签发/验签、JWKS、游戏库口令派生（规格 §5.3 / §8）。"""
+"""自建认证：RS256 JWT 签发/验签、JWKS、游戏库口令派生。"""
 
 import base64
 import hashlib

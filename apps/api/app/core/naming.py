@@ -1,4 +1,4 @@
-"""资源命名派生：一切外部资源名只由 game_id 推导（规格 §5.3）。"""
+"""资源命名派生：一切外部资源名只由 game_id 推导。"""
 
 from app.core.constants import GAME_DB_PREFIX, GAME_DB_ROLE_SUFFIX
 

@@ -1,13 +1,12 @@
 """CloudBase 云托管（CloudRun）部署网关：发布出去的游戏服务。
 
-调用链与 `@cloudbase/manager-node` 的 `cloudrun.deploy()` 等价，已经
-`test/infra/cloudbase/api_deploy_verify.py` 实测（2026-10-08）：
+调用链与 `@cloudbase/manager-node` 的 `cloudrun.deploy()` 等价（已实测）：
   1. tcb:DescribeCloudBaseBuildService → UploadUrl / PackageName / PackageVersion
   2. PUT 源码 zip 到 UploadUrl
   3. tcbr:CreateCloudRunServer / UpdateCloudRunServer（package 模式 + Items）
   4. tcbr:DescribeCloudRunServerDetail → BaseInfo.DefaultDomainName / Status
 
-坑（见 03-验证结论与坑 §4.4）：
+坑：
   - 部署中再次提交会 ResourceInUse → 必须轮询重试；
   - 源码构建偶发 broken pipe → 由调用方重试；
   - 端口必须与服务监听一致（容器型显式 Port）。
