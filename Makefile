@@ -1,12 +1,12 @@
 .PHONY: up down install jwt-keys run-api run-agent sandbox-assets-publish
 
-ENV_FILE := $(CURDIR)/.env
+ENV_FILE := $(CURDIR)/apps/.env
 
 up:
-	docker compose up -d
+	cd apps && docker compose up -d
 
 down:
-	docker compose down
+	cd apps && docker compose down
 
 install:
 	cd apps/api && uv sync

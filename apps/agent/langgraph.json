@@ -3,7 +3,7 @@
   "graphs": {
     "game": "./agent/agent.py:build_game_agent"
   },
-  "env": "../../.env",
+  "env": "../.env",
   "auth": {
     "path": "./agent/auth.py:auth"
   },

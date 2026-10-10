@@ -20,7 +20,7 @@
 
 ## 开发环境拓扑（本阶段）
 
-- **平台元数据库**（`users` / `games` / `game_threads` / `game_versions`）：**本地 Docker PG**（`docker-compose.yml`，`aigame_platform`）。
+- **平台元数据库**（`users` / `games` / `game_threads` / `game_versions`）：**本地 Docker PG**（`apps/docker-compose.yml`，`aigame_platform`）。
 - **游戏数据库**（每游戏 `game_{sid}` + role `game_{sid}_rw`）：**公网 VPS PG**（`152.32.215.89:10050`，由 api 管理员凭证开通；沙盒经公网直连）。
 - AGS 沙盒、COS 桶均为腾讯云端资源（本地开发同样使用）。
 
@@ -44,7 +44,7 @@
 
 ## 规则
 
-- 配置全读环境变量，禁写死，无默认值，缺失 fail-fast；本地唯一配置源为根 `.env`（不提交），样板见 `.env.example`。
+- 配置全读环境变量，禁写死，无默认值，缺失 fail-fast；本地唯一配置源为 `apps/.env`（不提交），样板见 `apps/.env.example`。
 - Python：`apps/api`、`apps/agent` 各自独立 `uv` + `uv.lock`；`.python-version` 均为 `3.14.4`，`requires-python >=3.14,<3.15` 保持一致；不使用 uv workspace。
 - Node：`sandbox/game-template` 使用 npm，`package-lock.json` 必须提交。
 - 同步模式：api 路由用 `def` + 同步 `Session`，不引入 async SQLAlchemy。

@@ -4,7 +4,7 @@
 用法（仓库根）：
     make sandbox-assets-publish
  或：
-    cd sandbox && uv run --env-file ../.env --with cos-python-sdk-v5 python publish_assets.py
+    cd sandbox && uv run --env-file ../apps/.env --with cos-python-sdk-v5 python publish_assets.py
 
 产物：
     platform/game-template/**   游戏工程模板（建游戏时复制到 games/{game_id}/）

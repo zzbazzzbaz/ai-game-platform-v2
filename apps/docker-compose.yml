@@ -1,7 +1,5 @@
 name: ai-game-platform-dev
 
-# 开发阶段：平台元数据库（本地）。
-# 游戏数据库（每游戏 game_{sid} + role）在公网 VPS PG 上，由 api 开通。
 services:
   postgres:
     image: postgres:17.11

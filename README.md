@@ -9,7 +9,7 @@
 ## 快速开始（开发）
 
 ```bash
-cp .env.example .env      # 填好密钥（VPS PG、E2B、COS、LLM）
+cp apps/.env.example apps/.env   # 填好密钥（VPS PG、E2B、COS、LLM）
 make up                   # 本地平台 PG
 make jwt-keys             # 开发用 RS256 密钥
 make install              # 同步 Python / Node 依赖

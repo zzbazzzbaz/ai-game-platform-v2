@@ -4,7 +4,7 @@
 
 | 库 | 位置 | 内容 | 谁维护 |
 |---|---|---|---|
-| 平台元数据库 `aigame_platform`（schema `platform`） | **本地 Docker PG**（`docker-compose.yml`） | `users` / `games` / `game_threads` / `game_versions` | `apps/api`（启动时 `CREATE SCHEMA` + `create_all`） |
+| 平台元数据库 `aigame_platform`（schema `platform`） | **本地 Docker PG**（`apps/docker-compose.yml`） | `users` / `games` / `game_threads` / `game_versions` | `apps/api`（启动时 `CREATE SCHEMA` + `create_all`） |
 | 游戏数据库 `game_{sid}` + role `game_{sid}_rw` | **公网 VPS PG**（`152.32.215.89:10050`） | 每个游戏自己的表（由游戏工程 `db/migrate.js` 建） | `apps/api` 管理员凭证**幂等**开通 |
 
 > `sid = game_id 去掉 "-"`（32 位十六进制）。
@@ -35,6 +35,6 @@ postgresql://game_{sid}_rw:<pwd>@152.32.215.89:10050/game_{sid}?sslmode=disable
 ## 本地平台库重置
 
 ```bash
-docker compose down -v && docker compose up -d   # 清空本地平台库
+cd apps && docker compose down -v && docker compose up -d   # 清空本地平台库
 # api 下次启动会重新建 schema 与表
 ```
