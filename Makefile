@@ -20,7 +20,7 @@ jwt-keys:
 		&& echo "已生成 apps/api/.keys/jwt_{private,public}.pem"
 
 run-api:
-	cd apps/api && uv run --env-file $(ENV_FILE) fastapi run --port 8000
+	cd apps/api && uv run --env-file $(ENV_FILE) fastapi run --no-reload --port 8000
 
 run-agent:
 	cd apps/agent && uv run --env-file $(ENV_FILE) langgraph dev --no-reload
