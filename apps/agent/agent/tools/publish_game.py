@@ -13,10 +13,9 @@ def make_publish_game_tool(*, thread_id: str) -> BaseTool:
 
     @make_tool
     def publish_game(name: str = "") -> str:
-        """把当前游戏发布到公网，返回可分享链接。
+        """把当前游戏发布到公网，返回可分享链接（仅在用户明确要求发布时调用）。
 
-        发布前必须保证工作区能构建（`npm run build`）且游戏服务可运行。
-        name 可选，用于给游戏起个名字。
+        发布前平台会自动做构建与健康校验；name 可选，用于给这版发布写个备注。
         """
         try:
             data = call_internal(

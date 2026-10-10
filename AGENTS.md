@@ -32,6 +32,7 @@
 - 命名根：`game_id`（UUID）；`sid = game_id 去掉"-"`（32 位十六进制）；所有外部资源命名只由 game_id 推导。
 - 沙盒（AGS `aio` 预置）：`metadata.game_id = game_id`；工作区 `/workspace/work`（COS `games/{game_id}/`）、素材 `/workspace/input`（只读）、依赖 `/opt/deps`、skills `/opt/skills`。
 - COS 前缀：游戏资产 `games/{game_id}/**`；版本包 `games/{game_id}/versions/{seq}.tar`；平台资产 `platform/**`。
+- 托管服务名：`g-{sid}`（云托管服务名上限 36 字符，`game-{game_id}` 超限；仍仅由 game_id 派生）。
 - 游戏数据库：`game_{sid}`、role `game_{sid}_rw`，密码 = `base64url(HMAC-SHA256(GAME_DB_PASSWORD_MASTER_SECRET, game_id))`；开通必须 `REVOKE CONNECT ... FROM PUBLIC` 且幂等（不重建、不改密码）。
 - 内部接口（agent → api，`X-Internal-Token`，请求/响应模型以 `apps/api/app/api/schemas/internal.py` 为唯一权威）：
 

@@ -56,8 +56,20 @@ def restart_server(
 
 @router.post("/games/publish", response_model=PublishGameResponse)
 def publish_game(
-    body: PublishGameBody, session: SessionDep, tcb: TcbDep, cos: CosDep, _: InternalDep
+    body: PublishGameBody,
+    session: SessionDep,
+    tcb: TcbDep,
+    cos: CosDep,
+    ags: AgsDep,
+    pg_admin: PgAdminDep,
+    _: InternalDep,
 ) -> dict:
     return publish_service.publish_game(
-        thread_id=body.thread_id, name=body.name, session=session, tcb=tcb, cos=cos
+        thread_id=body.thread_id,
+        name=body.name,
+        session=session,
+        tcb=tcb,
+        cos=cos,
+        ags=ags,
+        pg_admin=pg_admin,
     )

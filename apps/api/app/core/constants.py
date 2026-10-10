@@ -73,3 +73,15 @@ FILE_CHUNK_SIZE = 256 * 1024
 TCB_UPLOAD_TIMEOUT_SECONDS = 300
 TCB_BUSY_RETRY_COUNT = 12
 TCB_BUSY_RETRY_INTERVAL_SECONDS = 30
+TCB_READY_TIMEOUT_SECONDS = 900
+TCB_READY_INTERVAL_SECONDS = 10
+TCB_HEALTH_RETRY_COUNT = 80
+TCB_HEALTH_INTERVAL_SECONDS = 15
+# 云托管服务名上限 36 字符：`game-{game_id}` 超限，改 `g-{sid}`（34 字符，仍仅由 game_id 派生）
+TCB_SERVER_NAME_PREFIX = "g-"
+PUBLISH_BUILD_TIMEOUT_SECONDS = 300
+PUBLISH_EXCLUDED_TOP = ("node_modules", "dist", ".runtime", "versions", "input")
+PUBLISH_TEXT_SUFFIXES = (".js", ".mjs", ".json", ".html", ".css", ".md", ".txt", ".yml", ".yaml")
+PUBLISH_FORBIDDEN_PATTERNS = ("postgresql://", "postgres://", "127.0.0.1", "http://localhost", "https://localhost")
+VERSION_STATUS_DEPLOYING = "deploying"
+VERSION_STATUS_FAILED = "failed"

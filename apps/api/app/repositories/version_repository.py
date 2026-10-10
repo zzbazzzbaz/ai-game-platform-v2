@@ -1,9 +1,14 @@
 import uuid
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core.constants import VERSION_STATUS_DEPLOYED
+from app.core.constants import (
+    VERSION_STATUS_DEPLOYED,
+    VERSION_STATUS_DEPLOYING,
+    VERSION_STATUS_FAILED,
+)
 from app.models.version import GameVersion
 
 
@@ -47,6 +52,28 @@ class VersionRepository:
             .order_by(GameVersion.seq.desc())
             .limit(1)
         )
+
+    def mark_deploying(self, session: Session, version_id: uuid.UUID) -> None:
+        version = session.get(GameVersion, version_id)
+        if version is not None:
+            version.status = VERSION_STATUS_DEPLOYING
+            session.commit()
+
+    def mark_deployed(
+        self, session: Session, version_id: uuid.UUID, *, revision: str | None
+    ) -> None:
+        version = session.get(GameVersion, version_id)
+        if version is not None:
+            version.status = VERSION_STATUS_DEPLOYED
+            version.revision = revision
+            version.deployed_at = datetime.now(UTC)
+            session.commit()
+
+    def mark_failed(self, session: Session, version_id: uuid.UUID) -> None:
+        version = session.get(GameVersion, version_id)
+        if version is not None:
+            version.status = VERSION_STATUS_FAILED
+            session.commit()
 
 
 version_repository = VersionRepository()
