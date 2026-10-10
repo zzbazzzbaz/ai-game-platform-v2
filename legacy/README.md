@@ -15,5 +15,5 @@ Modal 沙盒 + MinIO + 自研快照 + 单文件发布，已被 10.8 规格（A1�
 |---|---|
 | `api_server`（FastAPI 骨架、分层规范） | `apps/api`（已重写） |
 | `agent_server`（deepagents + ModalBackend） | `apps/agent`（AgsBackend + JWKS 验签） |
-| `sandbox`（Modal 镜像 + Phaser skills） | `infra/sandbox`（skills 已迁入；镜像方案改为 AGS aio） + `packages/game-template` |
+| `sandbox`（Modal 镜像 + Phaser skills） | `sandbox/`（skills + init.sh + 发布脚本）与 `sandbox/game-template/` |
 | `deploy`（compose） | 根 `docker-compose.yml`（本地平台 PG） |

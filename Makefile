@@ -11,7 +11,7 @@ down:
 install:
 	cd apps/api && uv sync
 	cd apps/agent && uv sync
-	cd packages/game-template && npm install
+	cd sandbox/game-template && npm install
 
 jwt-keys:
 	cd apps/api && mkdir -p .keys \
@@ -26,4 +26,4 @@ run-agent:
 	cd apps/agent && uv run --env-file $(ENV_FILE) langgraph dev --no-reload
 
 sandbox-assets-publish:
-	cd infra/sandbox && uv run --env-file $(ENV_FILE) --with cos-python-sdk-v5 python publish_assets.py
+	cd sandbox && uv run --env-file $(ENV_FILE) --with cos-python-sdk-v5 python publish_assets.py

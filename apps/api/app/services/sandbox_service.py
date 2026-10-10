@@ -1,6 +1,6 @@
 """沙盒编排：ensure（前缀兜底 → AGS 创建/复用 → 初始化）/ 重启游戏服务 / 预览地址。
 
-初始化（`infra/sandbox/init.sh`，由 COS 平台前缀下发）：
+初始化（`sandbox/init.sh`，由 COS 平台前缀下发）：
   1. skills 解包到 `/opt/skills`（deepagents 经沙盒 backend 读取）
   2. 依赖装到 `/opt/deps`（不进 COS 挂载层）
   3. 软链 `/workspace/work/node_modules → /opt/deps/node_modules`

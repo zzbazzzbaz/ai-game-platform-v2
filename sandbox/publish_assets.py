@@ -4,7 +4,7 @@
 用法（仓库根）：
     make sandbox-assets-publish
  或：
-    cd infra/sandbox && uv run --env-file ../../.env --with cos-python-sdk-v5 python publish_assets.py
+    cd sandbox && uv run --env-file ../.env --with cos-python-sdk-v5 python publish_assets.py
 
 产物：
     platform/game-template/**   游戏工程模板（建游戏时复制到 games/{game_id}/）
@@ -21,8 +21,8 @@ from pathlib import Path
 from qcloud_cos import CosConfig, CosS3Client
 
 HERE = Path(__file__).resolve().parent
-REPO = HERE.parent.parent
-TEMPLATE_DIR = REPO / "packages" / "game-template"
+REPO = HERE.parent
+TEMPLATE_DIR = REPO / "sandbox" / "game-template"
 SKILLS_DIR = HERE / "assets" / "skills"
 
 IGNORED_PARTS = {"node_modules", "dist", ".runtime", ".git", ".DS_Store"}

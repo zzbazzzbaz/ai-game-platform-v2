@@ -1,12 +1,13 @@
-# 沙盒资产（infra/sandbox）
+# 沙盒与游戏模板（sandbox/）
 
-AGS 沙盒（`aio` 预置类型）的初始化资产；**不是**独立工程，无包管理文件。
+AGS 沙盒资产 + 游戏工程模板的合集；除 `game-template/`（npm 工程）外均为脚本/资产。
 
-| 文件 | 作用 |
+| 内容 | 作用 |
 |---|---|
+| `game-template/` | 游戏工程模板（npm：Express + Socket.IO + Phaser + pg）；建游戏时种入 `games/{game_id}/` |
 | `init.sh` | 沙盒初始化：解 skills → `/opt/skills`、装依赖 → `/opt/deps`、软链 `/workspace/work/node_modules`（幂等，api 下发执行） |
-| `assets/skills/` | Phaser 技能库（deepagents 经沙盒 backend 读取 `SKILL.md`；旧项目资产迁入） |
-| `publish_assets.py` | 把 `packages/game-template`、skills、init.sh 发布到 COS `platform/` 前缀 |
+| `assets/skills/` | Phaser 技能库（deepagents 经沙盒 backend 读取 `SKILL.md`） |
+| `publish_assets.py` | 把 `game-template/`、skills、init.sh 发布到 COS `platform/` 前缀 |
 
 ## 发布
 

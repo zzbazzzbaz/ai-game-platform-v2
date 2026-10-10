@@ -1,4 +1,4 @@
-# 游戏工程模板（packages/game-template）
+# 游戏工程模板（sandbox/game-template）
 
 「一游戏一服务」的工程骨架：Express + Socket.IO + Phaser + PostgreSQL，同源单服务，
 发布到 CloudBase 云托管（容器型 + Dockerfile）。

@@ -3,7 +3,7 @@
 # 平台元数据库 schema
 PLATFORM_SCHEMA = "platform"
 
-# 沙盒内路径（与 infra/sandbox/init.sh 契约同步）
+# 沙盒内路径（与 sandbox/init.sh 契约同步）
 SANDBOX_WORK_ROOT = "/workspace/work"
 SANDBOX_INPUT_ROOT = "/workspace/input"
 SANDBOX_DEPS_ROOT = "/opt/deps"
@@ -40,7 +40,7 @@ GAME_SERVER_RESTART_COMMAND = "\n".join(
     ]
 )
 
-# COS 平台资产（infra/sandbox/publish_assets.py 发布）
+# COS 平台资产（sandbox/publish_assets.py 发布）
 COS_TEMPLATE_PREFIX = "game-template"
 COS_SKILLS_ARCHIVE = "sandbox/skills.tar.gz"
 COS_INIT_SCRIPT = "sandbox/init.sh"

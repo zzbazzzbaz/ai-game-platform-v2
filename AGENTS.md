@@ -12,12 +12,9 @@
 |---|---|---|
 | `apps/api/` | FastAPI 平台后端；唯一持云凭证与 PG 管理凭证；认证签发方 | Python 工程（uv） |
 | `apps/agent/` | LangGraph Server + deepagents；只持沙盒访问权（E2B Key）与内部令牌 | Python 工程（uv） |
-| `packages/game-template/` | 生成游戏的工程模板（Express + Socket.IO + Phaser + pg） | npm 工程 |
-| `infra/sandbox/` | 沙盒初始化脚本 + Phaser skills + COS 资产发布脚本 | 脚本/资产（非工程） |
-| `infra/db/` | 数据库拓扑与开通说明 | 文档（非工程） |
+| `sandbox/` | 沙盒资产 + 游戏模板：`game-template/`（npm 工程）、`init.sh`、`assets/skills/`、`publish_assets.py` | 子目录为 npm 工程，其余为脚本/资产 |
 | `legacy/` | 旧实现冻结参考；**禁止 import**；M6 打通后删除 | 冻结代码 |
-| `docs/` | 规格与讨论记录 | 文档 |
-| `test/` | 技术路线验证存档（M1~M6b） | 存档 |
+| `docs/` | 规格与讨论记录（`docs/db/` 为数据库说明） | 文档 |
 
 前端（apps/web）暂缓，等 M5/M6 打通后再做。
 
@@ -49,7 +46,7 @@
 
 - 配置全读环境变量，禁写死，无默认值，缺失 fail-fast；本地唯一配置源为根 `.env`（不提交），样板见 `.env.example`。
 - Python：`apps/api`、`apps/agent` 各自独立 `uv` + `uv.lock`；`.python-version` 均为 `3.14.4`，`requires-python >=3.14,<3.15` 保持一致；不使用 uv workspace。
-- Node：`packages/game-template` 使用 npm，`package-lock.json` 必须提交。
+- Node：`sandbox/game-template` 使用 npm，`package-lock.json` 必须提交。
 - 同步模式：api 路由用 `def` + 同步 `Session`，不引入 async SQLAlchemy。
 - 分层依赖方向：`api → services → repositories → models`，`gateways`/`core` 可被任意层引用；业务错误用 `app/core/exceptions.py` 的异常类，由全局 handler 映射，禁止路由写 try/except 错误映射。
 - 删除文件用 `trash`，不用 `rm`；文档/注释/错误信息用中文。
