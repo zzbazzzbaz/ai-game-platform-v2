@@ -28,11 +28,6 @@ class ProvisionDatabaseResponse(BaseModel):
     database_url: str
 
 
-class RestartServerResponse(BaseModel):
-    ok: bool
-    log_tail: str
-
-
 class PublishGameBody(BaseModel):
     thread_id: uuid.UUID
     name: str = ""

@@ -11,34 +11,19 @@ SANDBOX_SKILLS_ROOT = "/opt/skills"
 SANDBOX_INIT_MARKER = "/opt/.aigame-init-done"
 SANDBOX_SKILLS_TMP = "/tmp/skills.tar.gz"
 SANDBOX_NOVNC_PORT = 9000
-SANDBOX_CDP_PORT = 9000
 GAME_SERVER_PORT = 3000
 
-# 沙盒内游戏服务命令（保活 / 重启）
-# 注意：pgrep/pkill 的 pattern 用 `[s]erver` 转义，避免匹配到执行本脚本的 bash 自身。
-GAME_SERVER_ENSURE_COMMAND = "\n".join(
-    [
-        f"cd {SANDBOX_WORK_ROOT}",
-        "mkdir -p .runtime",
-        'if ! pgrep -f "[d]ev.mjs" >/dev/null; then',
-        "  nohup npm run dev > .runtime/server.log 2>&1 &",
-        "  sleep 4",
-        "fi",
-        "tail -n 20 .runtime/server.log 2>/dev/null || true",
-    ]
-)
-GAME_SERVER_RESTART_COMMAND = "\n".join(
-    [
-        f"cd {SANDBOX_WORK_ROOT}",
-        "mkdir -p .runtime",
-        'pkill -f "[d]ev.mjs" || true',
-        'pkill -f "[s]erver/index.js" || true',
-        "sleep 1",
-        "nohup npm run dev > .runtime/server.log 2>&1 &",
-        "sleep 4",
-        "tail -n 80 .runtime/server.log",
-    ]
-)
+# 沙盒内游戏服务命令（保活）
+# 注意：pgrep 的 pattern 用 `[d]ev.mjs` 转义，避免匹配到执行本脚本的 bash 自身。
+GAME_SERVER_ENSURE_COMMAND = "\n".join([
+    f"cd {SANDBOX_WORK_ROOT}",
+    "mkdir -p .runtime",
+    'if ! pgrep -f "[d]ev.mjs" >/dev/null; then',
+    "  nohup npm run dev > .runtime/server.log 2>&1 &",
+    "  sleep 4",
+    "fi",
+    "tail -n 20 .runtime/server.log 2>/dev/null || true",
+])
 
 # COS 平台资产（sandbox/publish_assets.py 发布）
 COS_TEMPLATE_PREFIX = "game-template"
@@ -82,6 +67,12 @@ TCB_SERVER_NAME_PREFIX = "g-"
 PUBLISH_BUILD_TIMEOUT_SECONDS = 300
 PUBLISH_EXCLUDED_TOP = ("node_modules", "dist", ".runtime", "versions", "input")
 PUBLISH_TEXT_SUFFIXES = (".js", ".mjs", ".json", ".html", ".css", ".md", ".txt", ".yml", ".yaml")
-PUBLISH_FORBIDDEN_PATTERNS = ("postgresql://", "postgres://", "127.0.0.1", "http://localhost", "https://localhost")
+PUBLISH_FORBIDDEN_PATTERNS = (
+    "postgresql://",
+    "postgres://",
+    "127.0.0.1",
+    "http://localhost",
+    "https://localhost",
+)
 VERSION_STATUS_DEPLOYING = "deploying"
 VERSION_STATUS_FAILED = "failed"

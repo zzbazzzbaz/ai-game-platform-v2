@@ -1,9 +1,0 @@
-[project]
-name = "ags-m1-verify"
-version = "0.1.0"
-description = "M1 沙盒链路验证（腾讯云 AGS / E2B 兼容协议）"
-requires-python = ">=3.11"
-dependencies = [
-    "e2b>=1.0.0",
-    "playwright>=1.40.0",
-]

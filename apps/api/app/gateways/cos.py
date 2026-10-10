@@ -6,6 +6,8 @@
 - 平台资产：`platform/**`（由 sandbox/publish_assets.py 发布）
 """
 
+from typing import cast
+
 from qcloud_cos import CosConfig, CosS3Client
 from qcloud_cos.cos_exception import CosServiceError
 
@@ -25,9 +27,7 @@ class CosGateway:
         games_prefix: str,
         platform_prefix: str,
     ) -> None:
-        config = CosConfig(
-            Region=region, SecretId=secret_id, SecretKey=secret_key, Scheme="https"
-        )
+        config = CosConfig(Region=region, SecretId=secret_id, SecretKey=secret_key, Scheme="https")
         self._client = CosS3Client(config)
         self._bucket = bucket
         self._games_prefix = games_prefix.strip("/")
@@ -54,7 +54,9 @@ class CosGateway:
 
     def put_bytes(self, key: str, data: bytes, content_type: str = _BINARY) -> None:
         try:
-            self._client.put_object(Bucket=self._bucket, Key=key, Body=data, ContentType=content_type)
+            self._client.put_object(
+                Bucket=self._bucket, Key=key, Body=data, ContentType=content_type
+            )
         except CosServiceError as e:
             raise UpstreamError(f"对象存储写入失败：{key}（{e.get_status_code()}）") from e
 
@@ -65,7 +67,7 @@ class CosGateway:
             if e.get_status_code() == 404:
                 return None
             raise UpstreamError(f"对象存储读取失败：{key}（{e.get_status_code()}）") from e
-        return resp["Body"].get_raw_stream().read()
+        return cast(bytes, resp["Body"].get_raw_stream().read())
 
     def exists(self, key: str) -> bool:
         try:
@@ -97,13 +99,17 @@ class CosGateway:
             self._client.copy_object(
                 Bucket=self._bucket,
                 Key=dst_key,
-                CopySource={"Bucket": self._bucket, "Key": src_key, "Region": self._region_of_client()},
+                CopySource={
+                    "Bucket": self._bucket,
+                    "Key": src_key,
+                    "Region": self._region_of_client(),
+                },
             )
         except CosServiceError as e:
             raise UpstreamError(f"对象存储复制失败：{src_key} → {dst_key}") from e
 
     def _region_of_client(self) -> str:
-        return self._client._conf._region  # SDK 未暴露公开属性
+        return cast(str, self._client._conf._region)  # SDK 未暴露公开属性
 
     def copy_prefix(self, src_prefix: str, dst_prefix: str) -> int:
         count = 0

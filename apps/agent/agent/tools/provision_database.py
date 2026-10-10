@@ -12,7 +12,8 @@ def make_provision_database_tool(*, thread_id: str) -> BaseTool:
     def provision_database() -> str:
         """为当前游戏开通（或确认）独占数据库，返回连接串。
 
-        平台在创建游戏时已开通并把 DATABASE_URL 注入沙盒环境；仅当环境变量缺失时调用本工具。
+        平台在创建游戏时已开通并把 DATABASE_URL 注入沙盒环境，一般无需调用；
+        仅当环境变量缺失时使用（平台后端操作，沙盒内无法自行开通）。
         """
         try:
             data = call_internal(

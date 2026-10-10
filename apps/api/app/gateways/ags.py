@@ -6,12 +6,12 @@
 """
 
 import json
+from typing import Any
 
 from e2b import Sandbox
 from e2b.sandbox.commands.command_handle import CommandExitException
 
 from app.core.constants import (
-    SANDBOX_CDP_PORT,
     SANDBOX_INPUT_ROOT,
     SANDBOX_NOVNC_PORT,
     SANDBOX_WORK_ROOT,
@@ -20,15 +20,13 @@ from app.core.exceptions import UpstreamError
 
 
 class AgsGateway:
-    def __init__(
-        self, *, domain: str, api_key: str, template: str, timeout_seconds: int
-    ) -> None:
+    def __init__(self, *, domain: str, api_key: str, template: str, timeout_seconds: int) -> None:
         self._domain = domain
         self._api_key = api_key
         self._template = template
         self._timeout_seconds = timeout_seconds
 
-    def _kwargs(self) -> dict:
+    def _kwargs(self) -> dict[str, Any]:
         return {"api_key": self._api_key, "domain": self._domain}
 
     def connect(self, sandbox_id: str) -> Sandbox | None:
@@ -43,7 +41,9 @@ class AgsGateway:
             raise UpstreamError("沙盒不存在或已过期，请重新进入游戏会话")
         return sandbox
 
-    def ensure(self, *, game_id: str, sandbox_id: str | None, envs: dict | None) -> tuple[str, bool]:
+    def ensure(
+        self, *, game_id: str, sandbox_id: str | None, envs: dict[str, Any] | None
+    ) -> tuple[str, bool]:
         """创建 / 复用沙盒。返回 (sandbox_id, created)。"""
         if sandbox_id:
             existing = self.connect(sandbox_id)
@@ -58,7 +58,7 @@ class AgsGateway:
                 "readOnly": True,
             },
         ]
-        kwargs: dict = {
+        kwargs: dict[str, Any] = {
             "template": self._template,
             "timeout": self._timeout_seconds,
             "metadata": {"game_id": str(game_id), "x-mounts": json.dumps(mounts)},
@@ -109,12 +109,6 @@ class AgsGateway:
             f"?access_token={token}&path=websockify%3Faccess_token%3D{token}"
             f"&autoconnect=1&resize=scale"
         )
-
-    def cdp_url(self, sandbox_id: str) -> str:
-        sandbox = self._require(sandbox_id)
-        host = sandbox.get_host(SANDBOX_CDP_PORT)
-        token = sandbox._envd_access_token
-        return f"https://{host}/cdp?access_token={token}"
 
     def kill(self, sandbox_id: str) -> None:
         sandbox = self.connect(sandbox_id)

@@ -1,7 +1,7 @@
 import hmac
 import uuid
 from collections.abc import Iterator
-from typing import Annotated
+from typing import Annotated, cast
 
 from fastapi import Depends, Header, HTTPException, Request
 from sqlalchemy.orm import Session
@@ -26,23 +26,23 @@ def get_session(request: Request) -> Iterator[Session]:
 
 
 def get_settings_dep(request: Request) -> Settings:
-    return request.app.state.settings
+    return cast(Settings, request.app.state.settings)
 
 
 def get_ags(request: Request) -> AgsGateway:
-    return request.app.state.ags
+    return cast(AgsGateway, request.app.state.ags)
 
 
 def get_cos(request: Request) -> CosGateway:
-    return request.app.state.cos
+    return cast(CosGateway, request.app.state.cos)
 
 
 def get_pg_admin(request: Request) -> PgAdminGateway:
-    return request.app.state.pg_admin
+    return cast(PgAdminGateway, request.app.state.pg_admin)
 
 
 def get_tcb(request: Request) -> TcbGateway:
-    return request.app.state.tcb
+    return cast(TcbGateway, request.app.state.tcb)
 
 
 def _bearer(request: Request) -> str | None:

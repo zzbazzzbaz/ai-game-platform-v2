@@ -37,7 +37,6 @@
 |---|---|---|---|
 | POST | `/internal/sessions/ensure` | `{thread_id}` | `{game_id, sandbox_id, created}` |
 | POST | `/internal/db/provision` | `{thread_id}` | `{game_id, database_url}` |
-| POST | `/internal/sessions/{thread_id}/server/restart` | — | `{ok, log_tail}` |
 | POST | `/internal/games/publish` | `{thread_id, name}` | `{game_id, public_url, seq}` |
 
 - 常量集中：`apps/api/app/core/constants.py`、`apps/agent/agent/core/constants.py`。

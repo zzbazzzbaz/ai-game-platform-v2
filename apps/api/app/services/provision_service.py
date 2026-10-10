@@ -1,6 +1,7 @@
 """游戏数据库开通（幂等；连接串派生、不落库）。"""
 
 import uuid
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -11,7 +12,7 @@ from app.repositories.thread_repository import thread_repository
 
 def provision_database_for_thread(
     *, thread_id: uuid.UUID, session: Session, pg_admin: PgAdminGateway
-) -> dict:
+) -> dict[str, Any]:
     thread = thread_repository.get(session, thread_id)
     if thread is None:
         raise NotFoundError("会话不存在")

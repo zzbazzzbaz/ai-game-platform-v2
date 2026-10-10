@@ -1,5 +1,8 @@
 """注册 / 登录 / 刷新（无状态 JWT；口令 bcrypt）。"""
 
+import uuid
+from typing import Any
+
 from sqlalchemy.orm import Session
 
 from app.core.constants import MAX_PASSWORD_BYTES, MIN_PASSWORD_LENGTH, STATUS_ACTIVE
@@ -28,7 +31,7 @@ def _validate_password(password: str) -> None:
         raise ValidationError("密码过长（UTF-8 编码不超过 72 字节）")
 
 
-def _issue_tokens(user_id: str) -> dict:
+def _issue_tokens(user_id: str) -> dict[str, Any]:
     access_token, expires_in = create_access_token(user_id)
     return {
         "access_token": access_token,
@@ -38,14 +41,12 @@ def _issue_tokens(user_id: str) -> dict:
     }
 
 
-def register(*, username: str, password: str, session: Session) -> dict:
+def register(*, username: str, password: str, session: Session) -> dict[str, Any]:
     resolved = _validate_username(username)
     _validate_password(password)
     if user_repository.get_by_username(session, resolved) is not None:
         raise ValidationError("用户名已被占用")
-    user = user_repository.create(
-        session, username=resolved, password_hash=hash_password(password)
-    )
+    user = user_repository.create(session, username=resolved, password_hash=hash_password(password))
     return {
         "user_id": user.user_id,
         "username": user.username,
@@ -53,7 +54,7 @@ def register(*, username: str, password: str, session: Session) -> dict:
     }
 
 
-def login(*, username: str, password: str, session: Session) -> dict:
+def login(*, username: str, password: str, session: Session) -> dict[str, Any]:
     user = user_repository.get_by_username(session, username.strip())
     if user is None or not verify_password(password, user.password_hash):
         raise ValidationError("用户名或密码错误")
@@ -66,8 +67,11 @@ def login(*, username: str, password: str, session: Session) -> dict:
     }
 
 
-def refresh(*, refresh_token: str, session: Session) -> dict:
-    user_id = decode_refresh_token(refresh_token)
+def refresh(*, refresh_token: str, session: Session) -> dict[str, Any]:
+    try:
+        user_id = uuid.UUID(decode_refresh_token(refresh_token))
+    except ValueError as e:
+        raise ValidationError("令牌缺少用户标识") from e
     user = user_repository.get(session, user_id)
     if user is None:
         raise ValidationError("账号不存在")

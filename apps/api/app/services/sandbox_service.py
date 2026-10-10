@@ -1,4 +1,4 @@
-"""沙盒编排：ensure（前缀兜底 → AGS 创建/复用 → 初始化）/ 重启游戏服务 / 预览地址。
+"""沙盒编排：ensure（前缀兜底 → AGS 创建/复用 → 初始化）/ 预览地址。
 
 初始化（`sandbox/init.sh`，由 COS 平台前缀下发）：
   1. skills 解包到 `/opt/skills`（deepagents 经沙盒 backend 读取）
@@ -7,6 +7,7 @@
 """
 
 import uuid
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -15,11 +16,10 @@ from app.core.constants import (
     COS_SKILLS_ARCHIVE,
     GAME_SERVER_ENSURE_COMMAND,
     GAME_SERVER_PORT,
-    GAME_SERVER_RESTART_COMMAND,
     SANDBOX_INIT_MARKER,
     SANDBOX_SKILLS_TMP,
 )
-from app.core.exceptions import NotFoundError, UpstreamError, ValidationError
+from app.core.exceptions import NotFoundError, UpstreamError
 from app.gateways.ags import AgsGateway
 from app.gateways.cos import CosGateway
 from app.gateways.pg_admin import PgAdminGateway
@@ -66,7 +66,7 @@ def ensure_for_thread(
     ags: AgsGateway,
     cos: CosGateway,
     pg_admin: PgAdminGateway,
-) -> dict:
+) -> dict[str, Any]:
     thread, game = _resolve(thread_id, session)
     game_id = str(game.game_id)
     cos.ensure_game_prefixes(game.game_id)
@@ -89,14 +89,6 @@ def ensure_for_thread(
     }
 
 
-def restart_server(*, thread_id: uuid.UUID, session: Session, ags: AgsGateway) -> dict:
-    _, game = _resolve(thread_id, session)
-    if not game.sandbox_id:
-        raise ValidationError("沙盒尚未创建，请先进入会话")
-    code, out, err = ags.run(game.sandbox_id, GAME_SERVER_RESTART_COMMAND, timeout=120)
-    return {"ok": code == 0, "log_tail": (out or err)[-2000:]}
-
-
 def preview_url_for_thread(
     *,
     thread_id: uuid.UUID,
@@ -104,7 +96,7 @@ def preview_url_for_thread(
     ags: AgsGateway,
     cos: CosGateway,
     pg_admin: PgAdminGateway,
-) -> dict:
+) -> dict[str, Any]:
     ensured = ensure_for_thread(
         thread_id=thread_id, session=session, ags=ags, cos=cos, pg_admin=pg_admin
     )

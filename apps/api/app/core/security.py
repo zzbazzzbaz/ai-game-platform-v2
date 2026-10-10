@@ -7,9 +7,11 @@ import json
 import time
 import uuid
 from functools import lru_cache
+from typing import Any
 
 import bcrypt
 import jwt
+from jwt import algorithms
 
 from app.core.config import get_settings
 from app.core.constants import (
@@ -73,11 +75,11 @@ def create_refresh_token(user_id: str) -> str:
     return _encode_token(user_id, REFRESH_TOKEN_TYPE, get_settings().refresh_token_ttl_seconds)
 
 
-def decode_token(token: str, *, expected_type: str) -> dict:
+def decode_token(token: str, *, expected_type: str) -> dict[str, Any]:
     """本地验签并校验 iss/aud/exp；失败抛 ValidationError（由调用方映射 401）。"""
     settings = get_settings()
     try:
-        payload = jwt.decode(
+        payload: dict[str, Any] = jwt.decode(
             token,
             _public_key(),
             algorithms=[JWT_ALGORITHM],
@@ -109,12 +111,14 @@ def decode_refresh_token(token: str) -> str:
     return user_id
 
 
-def jwks() -> dict:
+def jwks() -> dict[str, Any]:
     """平台 JWKS（供 agent 本地验签）。"""
     from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
 
     public_key = serialization.load_pem_public_key(_public_key().encode("utf-8"))
-    jwk = json.loads(jwt.algorithms.RSAAlgorithm.to_jwk(public_key))
+    assert isinstance(public_key, rsa.RSAPublicKey)  # 平台密钥固定为 RSA
+    jwk = json.loads(algorithms.RSAAlgorithm.to_jwk(public_key))
     jwk.update({"kid": _key_id(), "use": "sig", "alg": JWT_ALGORITHM})
     return {"keys": [jwk]}
 

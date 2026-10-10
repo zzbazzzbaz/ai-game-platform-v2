@@ -5,6 +5,7 @@
 
 import asyncio
 from functools import lru_cache
+from typing import Any
 
 import jwt
 from jwt import PyJWKClient
@@ -21,7 +22,7 @@ def _jwks_client() -> PyJWKClient:
     return PyJWKClient(settings.jwks_url, cache_keys=True, lifespan=300)
 
 
-def _verify(token: str) -> dict:
+def _verify(token: str) -> dict[str, Any]:
     settings = get_settings()
     signing_key = _jwks_client().get_signing_key_from_jwt(token)
     payload = jwt.decode(

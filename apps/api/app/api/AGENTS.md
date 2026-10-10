@@ -9,8 +9,8 @@ FastAPI 路由 + 依赖注入 + Pydantic DTO + 异常到 HTTP 的映射。只负
 - `dependencies.py`：全部 DI 依赖（`SessionDep`/`AgsDep`/`CosDep`/`PgAdminDep`/`TcbDep`/`UserIdDep`/`InternalDep`），从 `request.app.state` 取全局资源。
 - `errors.py`：`AppError` → `{"detail": ...}` 全局 handler。
 - `schemas/`：请求/响应模型（HTTP DTO），服务层不 import；`schemas/internal.py` 为内部接口唯一权威。
-- `v1/router.py`：聚合各 endpoints，由 main 以 `/api/v1` 前缀挂载；`wellknown.py` 挂根路径 JWKS。
-- `v1/endpoints/`：按业务域拆文件——`auth`（注册/登录/刷新）、`games`（游戏/会话/版本）、`sessions`（预览）、`health`、`internal`（服务间回调）。
+- `v1/router.py`：聚合各 endpoints，由 main 以 `/api/v1` 前缀挂载；`v1/endpoints/wellknown.py` 由 main 单独挂根路径 JWKS（不经 `/api/v1` 前缀，公开端点）。
+- `v1/endpoints/`：按业务域拆文件——`auth`（注册/登录/刷新）、`games`（游戏/会话/版本）、`sessions`（预览）、`internal`（服务间回调）。
 
 ## 约束（MUST NOT）
 

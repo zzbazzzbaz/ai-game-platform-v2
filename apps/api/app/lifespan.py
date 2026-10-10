@@ -1,5 +1,5 @@
-from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from collections.abc import AsyncGenerator, Callable
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 
 from fastapi import FastAPI
 from sqlalchemy import text
@@ -14,7 +14,7 @@ from app.gateways.pg_admin import PgAdminGateway
 from app.gateways.tcb import TcbGateway
 
 
-def build_lifespan(settings: Settings):
+def build_lifespan(settings: Settings) -> Callable[[FastAPI], AbstractAsyncContextManager[None]]:
     @asynccontextmanager
     async def lifespan(application: FastAPI) -> AsyncGenerator[None]:
         engine = create_db_engine(settings.sqlalchemy_database_url)

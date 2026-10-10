@@ -2,8 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.errors import register_error_handlers
+from app.api.v1.endpoints.wellknown import router as wellknown_router
 from app.api.v1.router import api_router
-from app.api.wellknown import router as wellknown_router
 from app.core.config import Settings, get_settings
 from app.lifespan import build_lifespan
 

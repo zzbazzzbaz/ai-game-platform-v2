@@ -1,5 +1,7 @@
 """内部接口调用（agent → api；契约权威：apps/api/app/api/schemas/internal.py）。"""
 
+from typing import Any
+
 import httpx
 
 from agent.core.config import get_settings
@@ -10,7 +12,7 @@ class InternalApiError(Exception):
     pass
 
 
-def call_internal(path: str, payload: dict, *, timeout: int) -> dict:
+def call_internal(path: str, payload: dict[str, Any], *, timeout: int) -> dict[str, Any]:
     settings = get_settings()
     url = f"{settings.api_internal_url.rstrip('/')}{path}"
     try:
@@ -28,4 +30,5 @@ def call_internal(path: str, payload: dict, *, timeout: int) -> dict:
         except ValueError:
             detail = response.text
         raise InternalApiError(f"平台服务返回 {response.status_code}：{detail}")
-    return response.json()
+    data: dict[str, Any] = response.json()
+    return data

@@ -9,6 +9,7 @@ from app.gateways.cos import CosGateway
 from app.gateways.pg_admin import PgAdminGateway
 from app.models.game import Game
 from app.models.thread import GameThread
+from app.models.version import GameVersion
 from app.repositories.game_repository import game_repository
 from app.repositories.thread_repository import thread_repository
 from app.repositories.version_repository import version_repository
@@ -67,6 +68,8 @@ def create_thread(
     return thread_repository.create(session, game_id=game_id, title=title.strip())
 
 
-def list_versions(*, owner_id: uuid.UUID, game_id: uuid.UUID, session: Session) -> list:
+def list_versions(
+    *, owner_id: uuid.UUID, game_id: uuid.UUID, session: Session
+) -> list[GameVersion]:
     get_owned_game(owner_id=owner_id, game_id=game_id, session=session)
     return version_repository.list_by_game(session, game_id)

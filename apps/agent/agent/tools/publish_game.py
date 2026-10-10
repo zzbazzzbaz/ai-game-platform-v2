@@ -16,6 +16,7 @@ def make_publish_game_tool(*, thread_id: str) -> BaseTool:
         """把当前游戏发布到公网，返回可分享链接（仅在用户明确要求发布时调用）。
 
         发布前平台会自动做构建与健康校验；name 可选，用于给这版发布写个备注。
+        平台后端操作（需平台管理凭证），沙盒内无法自行发布。
         """
         try:
             data = call_internal(

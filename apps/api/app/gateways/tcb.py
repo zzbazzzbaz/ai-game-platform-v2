@@ -14,6 +14,7 @@
 
 import json
 import time
+from typing import Any
 
 import httpx
 
@@ -29,7 +30,7 @@ from app.core.constants import (
 from app.core.exceptions import UpstreamError
 
 
-def _req(cls, **kwargs):
+def _req(cls: type[Any], **kwargs: Any) -> Any:
     request = cls()
     for key, value in kwargs.items():
         setattr(request, key, value)
@@ -50,9 +51,9 @@ class TcbGateway:
         self._secret_key = secret_key
         self._env_id = env_id
         self._region = region
-        self._clients = None
+        self._clients: tuple[Any, Any] | None = None
 
-    def _get_clients(self):
+    def _get_clients(self) -> tuple[Any, Any]:
         if self._clients is None:
             from tencentcloud.common import credential
             from tencentcloud.common.profile.client_profile import ClientProfile
@@ -76,9 +77,9 @@ class TcbGateway:
         *,
         server_name: str,
         zip_bytes: bytes,
-        env_params: dict,
+        env_params: dict[str, Any],
         port: int,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """上传源码包并创建/更新 CloudRun 服务（容器型 + Dockerfile）。
 
         返回部署包信息（含 PackageVersion，可作为版本标识）。
@@ -145,7 +146,7 @@ class TcbGateway:
         except Exception:
             exists = False
 
-        def _do_once():
+        def _do_once() -> Any:
             if exists:
                 return tcbr.UpdateCloudRunServer(
                     _req(
@@ -184,7 +185,7 @@ class TcbGateway:
             "package_version": build.PackageVersion,
         }
 
-    def _deploy_records(self, *, server_name: str) -> list:
+    def _deploy_records(self, *, server_name: str) -> list[Any]:
         from tencentcloud.tcbr.v20220217 import models as tcbr_models
 
         _, tcbr = self._get_clients()
@@ -268,7 +269,7 @@ class TcbGateway:
             time.sleep(TCB_HEALTH_INTERVAL_SECONDS)
         raise UpstreamError("部署完成但健康检查未通过（/api/health）")
 
-    def get_server_detail(self, *, server_name: str) -> dict | None:
+    def get_server_detail(self, *, server_name: str) -> dict[str, Any] | None:
         """返回 {default_domain, status}；服务不存在返回 None。"""
         from tencentcloud.tcbr.v20220217 import models as tcbr_models
 

@@ -11,7 +11,6 @@ down:
 install:
 	cd apps/api && uv sync
 	cd apps/agent && uv sync
-	cd sandbox/game-template && npm install
 
 jwt-keys:
 	cd apps/api && mkdir -p .keys \

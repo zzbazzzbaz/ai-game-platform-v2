@@ -8,6 +8,7 @@ import io
 import tarfile
 import uuid
 import zipfile
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -109,7 +110,7 @@ def publish_game(
     tcb: TcbGateway,
     ags: AgsGateway,
     pg_admin: PgAdminGateway,
-) -> dict:
+) -> dict[str, Any]:
     thread = thread_repository.get(session, thread_id)
     if thread is None:
         raise NotFoundError("会话不存在")

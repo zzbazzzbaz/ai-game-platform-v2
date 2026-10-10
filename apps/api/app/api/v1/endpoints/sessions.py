@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 from fastapi import APIRouter
 
@@ -17,7 +18,7 @@ def preview(
     ags: AgsDep,
     cos: CosDep,
     pg_admin: PgAdminDep,
-) -> dict:
+) -> dict[str, Any]:
     """开发期预览：直接返回沙盒 NoVNC 地址（含令牌；上线前改同源反代）。"""
     game_service.get_owned_thread(owner_id=user_id, thread_id=thread_id, session=session)
     return sandbox_service.preview_url_for_thread(

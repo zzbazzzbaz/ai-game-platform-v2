@@ -64,9 +64,7 @@ class PgAdminGateway:
         try:
             if not self._database_exists(dbname):
                 with self._connect(self._admin_db) as conn:
-                    conn.execute(
-                        sql.SQL("CREATE DATABASE {}").format(sql.Identifier(dbname))
-                    )
+                    conn.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(dbname)))
             with self._connect(self._admin_db) as conn:
                 if not self._role_exists(role):
                     conn.execute(
