@@ -25,6 +25,6 @@ make sandbox-assets-publish
 ## 注意（坑）
 
 - 挂载前 COS 的 `games/{game_id}/` 与 `input/` 目录必须已存在（api 放 `.keep` 占位）。
-- `node_modules` 不放 COS 挂载层（大量小文件性能差），统一 `/opt/deps` + 软链。
+- `node_modules` 不放 COS 挂载层（大量小文件性能差）：沙盒初始化时在**沙盒内运行时下载安装**到 `/opt/deps` + 软链；本地依赖一律不上传（模板发布/版本包/部署包均排除）。
 - 沙盒内访问挂载点必须 `user="root"`（api/agent 已统一）。
 - Tool 级 `StorageMounts` 创建后不可改（需要调整时新建 Tool 并更新 `AGS_TEMPLATE`）。

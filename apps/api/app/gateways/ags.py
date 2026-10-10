@@ -1,6 +1,6 @@
 """AGS 沙盒网关（E2B 兼容协议；每游戏一个；COS 存储挂载）。
 
-- 数据面 = E2B 官方 SDK；`metadata["x-mounts"]` 为 AGS 私有扩展（见 AGS+COS 学习笔记）。
+- 数据面 = E2B 官方 SDK；`metadata["x-mounts"]` 为 AGS 私有扩展（细节见 `docs/chat/10.8/03-验证结论与坑.md`）。
 - 沙盒内访问挂载点必须以 `user="root"` 执行；挂载路径 `/workspace/{work,input}`。
 - 实例 ID 落 `games.sandbox_id`，创建 / 复用；沙盒有生命周期（timeout）。
 """

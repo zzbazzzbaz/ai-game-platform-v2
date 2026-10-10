@@ -1,7 +1,7 @@
 """deepagents 沙盒后端适配：AGS（E2B 协议）。
 
 只实现 deepagents `BaseSandbox` 的最小面：execute + 文件上传/下载。
-自行适配可绕开 `langchain-e2b` 对 `deepagents<0.7` 的版本约束（见 AGS+COS 学习笔记 §1.4）。
+自行适配可绕开 `langchain-e2b` 对 `deepagents<0.7` 的版本约束。
 沙盒内访问 COS 挂载点必须 `user="root"`。
 """
 
