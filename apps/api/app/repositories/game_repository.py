@@ -17,7 +17,9 @@ class GameRepository:
     def list_by_owner(self, session: Session, owner_id: uuid.UUID) -> list[Game]:
         return list(
             session.scalars(
-                select(Game).where(Game.owner_id == owner_id).order_by(Game.created_at.desc())
+                select(Game)
+                .where(Game.owner_id == owner_id)
+                .order_by(Game.updated_at.desc())
             )
         )
 

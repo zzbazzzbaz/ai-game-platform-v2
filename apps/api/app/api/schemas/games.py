@@ -17,6 +17,7 @@ class GameResponse(BaseModel):
     sandbox_id: str | None
     public_url: str | None
     created_at: datetime
+    updated_at: datetime
 
 
 class CreateThreadBody(BaseModel):
@@ -31,6 +32,7 @@ class ThreadResponse(BaseModel):
     title: str
     status: str
     created_at: datetime
+    updated_at: datetime
 
 
 class VersionResponse(BaseModel):

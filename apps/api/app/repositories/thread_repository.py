@@ -19,7 +19,7 @@ class ThreadRepository:
             session.scalars(
                 select(GameThread)
                 .where(GameThread.game_id == game_id)
-                .order_by(GameThread.created_at.asc())
+                .order_by(GameThread.updated_at.desc())
             )
         )
 
