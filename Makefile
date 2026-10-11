@@ -1,4 +1,4 @@
-.PHONY: up down install jwt-keys run-api run-agent sandbox-assets-publish
+.PHONY: up down install jwt-keys run-api run-agent
 
 ENV_FILE := $(CURDIR)/apps/.env
 
@@ -23,6 +23,3 @@ run-api:
 
 run-agent:
 	cd apps/agent && uv run --env-file $(ENV_FILE) langgraph dev --no-reload
-
-sandbox-assets-publish:
-	cd sandbox && uv run --env-file $(ENV_FILE) --with cos-python-sdk-v5 python publish_assets.py

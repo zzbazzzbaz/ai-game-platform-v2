@@ -2,21 +2,13 @@
 
 面向无编程基础用户：与 AI 多轮对话生成「带服务端的可玩游戏」，沙盒内实时预览，一键发布公网。
 
-- 唯一架构依据：`docs/chat/10.2/spec/技术架构规格.md`（v0.2.1）
-- 操作细节与坑：`docs/chat/10.8/02-技术架构规格.md`、`docs/chat/10.8/03-验证结论与坑.md`
-- 本仓库处于**开发阶段**：只做本地开发，不涉及生产部署。
-
 ## 仓库结构
 
 | 路径 | 内容 | 性质 |
 |---|---|---|
 | `apps/api/` | FastAPI 平台后端；唯一持云凭证与 PG 管理凭证；认证签发方 | Python 工程（uv） |
 | `apps/agent/` | LangGraph Server + deepagents；只持沙盒访问权（E2B Key）与内部令牌 | Python 工程（uv） |
-| `sandbox/` | 沙盒资产 + 游戏模板：`game-template/`（npm 工程）、`init.sh`、`assets/skills/`、`publish_assets.py` | 子目录为 npm 工程，其余为脚本/资产 |
-| `legacy/` | 旧实现冻结参考；**禁止 import**；M6 打通后删除 | 冻结代码 |
 | `docs/` | 规格与讨论记录（`docs/db/` 为数据库说明） | 文档 |
-
-前端（apps/web）暂缓，等 M5/M6 打通后再做。
 
 ## 开发环境拓扑（本阶段）
 
@@ -49,21 +41,3 @@
 - 同步模式：api 路由用 `def` + 同步 `Session`，不引入 async SQLAlchemy。
 - 分层依赖方向：`api → services → repositories → models`，`gateways`/`core` 可被任意层引用；业务错误用 `app/core/exceptions.py` 的异常类，由全局 handler 映射，禁止路由写 try/except 错误映射。
 - 删除文件用 `trash`，不用 `rm`；文档/注释/错误信息用中文。
-
-## 安全底线（规格 §10）
-
-- 管理员凭证只在 `apps/api`；agent / 沙盒 / 游戏服务不持有云端管理凭证。
-- 游戏代码视为不可信：只读平台注入的环境变量（`DATABASE_URL` / `PORT`）。
-- NoVNC 令牌与云凭证不得进入游戏产物；`env.md` / `.env` / `.keys` 不得提交。
-- 沙盒内访问 COS 挂载点必须以 `user="root"` 执行；`node_modules` 不进挂载层（沙盒内运行时安装到 `/opt/deps`），本地依赖一律不上传。
-
-## 常用命令
-
-```bash
-make up            # 本地平台 PG
-make jwt-keys      # 生成开发用 RS256 密钥（apps/api/.keys/）
-make install       # 同步 api/agent/模板依赖
-make run-api       # 启动 api（8000）
-make run-agent     # 启动 agent（2024，langgraph dev）
-make sandbox-assets-publish   # 发布模板/skills/init.sh 到 COS platform/ 前缀
-```
