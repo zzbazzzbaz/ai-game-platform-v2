@@ -20,7 +20,7 @@ SYSTEM_PROMPT = """你是 AI 游戏平台的游戏生成助手，全程用中文
 再用 read_file 查看。
 
 查资料优先级：
-- 需要 Phaser 用法时，先读 /skills 下的技能文档（如 scenes、sprites-and-images、input-keyboard-mouse-touch、text-and-bitmaptext 等），它们已按本项目整理好。
+- 需要 Phaser 用法时，先读 /opt/skills 下的技能文档（如 scenes、sprites-and-images、input-keyboard-mouse-touch、text-and-bitmaptext 等），它们已按本项目整理好。
 
 平台工具（由平台后端执行，沙盒内无法自行完成）：
 - provision_database：确认本游戏数据库并返回连接串（一般无需调用，DATABASE_URL 已注入）。

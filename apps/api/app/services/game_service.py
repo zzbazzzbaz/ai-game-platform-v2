@@ -46,12 +46,11 @@ def create_game(
     cos: CosGateway,
     pg_admin: PgAdminGateway,
 ) -> Game:
-    """新建游戏：建记录 + 初始会话；数据库开通与工作区种入为幂等副作用。"""
+    """新建游戏：建记录 + 初始会话；数据库开通与工作区前缀占位为幂等副作用。"""
     resolved_name = name.strip() or "未命名游戏"
     game = game_repository.create(session, owner_id=owner_id, name=resolved_name)
     thread_repository.create(session, game_id=game.game_id, title="初始会话")
     cos.ensure_game_prefixes(game.game_id)
-    cos.seed_workspace(game.game_id)
     pg_admin.ensure_game_database(str(game.game_id))
     return game
 

@@ -1,4 +1,4 @@
-"""跨模块常量（与 apps/api/app/core/constants.py、sandbox/init.sh 契约同步）。"""
+"""跨模块常量（与 apps/api/app/core/constants.py、sandbox/image 镜像契约同步）。"""
 
 # 沙盒内路径
 SKILLS_MOUNT_DIR = "/opt/skills"

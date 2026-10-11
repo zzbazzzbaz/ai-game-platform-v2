@@ -3,13 +3,9 @@
 # 平台元数据库 schema
 PLATFORM_SCHEMA = "platform"
 
-# 沙盒内路径（与 sandbox/init.sh 契约同步）
+# 沙盒内路径（与 sandbox/image 镜像、apps/agent 契约同步）
 SANDBOX_WORK_ROOT = "/workspace/work"
 SANDBOX_INPUT_ROOT = "/workspace/input"
-SANDBOX_DEPS_ROOT = "/opt/deps"
-SANDBOX_SKILLS_ROOT = "/opt/skills"
-SANDBOX_INIT_MARKER = "/opt/.aigame-init-done"
-SANDBOX_SKILLS_TMP = "/tmp/skills.tar.gz"
 SANDBOX_NOVNC_PORT = 9000
 GAME_SERVER_PORT = 3000
 
@@ -24,11 +20,6 @@ GAME_SERVER_ENSURE_COMMAND = "\n".join([
     "fi",
     "tail -n 20 .runtime/server.log 2>/dev/null || true",
 ])
-
-# COS 平台资产（sandbox/publish_assets.py 发布）
-COS_TEMPLATE_PREFIX = "game-template"
-COS_SKILLS_ARCHIVE = "sandbox/skills.tar.gz"
-COS_INIT_SCRIPT = "sandbox/init.sh"
 
 # 资源命名（sid = game_id 去横线；命名只由 game_id 推导）
 GAME_DB_PREFIX = "game_"

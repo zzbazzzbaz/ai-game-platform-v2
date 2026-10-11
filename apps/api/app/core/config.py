@@ -44,7 +44,6 @@ class Settings(BaseSettings):
     cos_region: str
     cos_bucket: str
     cos_games_prefix: str
-    cos_platform_prefix: str
 
     # CloudBase 云托管（发布，M6）
     tencent_secret_id: str

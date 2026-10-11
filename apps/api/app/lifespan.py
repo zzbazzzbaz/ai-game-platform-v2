@@ -34,7 +34,6 @@ def build_lifespan(settings: Settings) -> Callable[[FastAPI], AbstractAsyncConte
             region=settings.cos_region,
             bucket=settings.cos_bucket,
             games_prefix=settings.cos_games_prefix,
-            platform_prefix=settings.cos_platform_prefix,
         )
         application.state.pg_admin = PgAdminGateway(
             host=settings.pg_admin_host,

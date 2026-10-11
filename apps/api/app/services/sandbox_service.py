@@ -1,9 +1,8 @@
-"""沙盒编排：ensure（前缀兜底 → AGS 创建/复用 → 初始化）/ 预览地址。
+"""沙盒编排：ensure（前缀兜底 → AGS 创建/复用 → 保活游戏服务）/ 预览地址。
 
-初始化（`sandbox/init.sh`，由 COS 平台前缀下发）：
-  1. skills 解包到 `/opt/skills`（deepagents 经沙盒 backend 读取）
-  2. 依赖装到 `/opt/deps`（不进 COS 挂载层）
-  3. 软链 `/workspace/work/node_modules → /opt/deps/node_modules`
+初始化全部由镜像 entrypoint 完成（见 sandbox/image/）：
+  1. 工作区 /workspace/work 为空时，从镜像模板 /opt/game-template 播种（COS 挂载）
+  2. node_modules 软链到镜像内依赖；skills 常驻 /opt/skills
 """
 
 import uuid
@@ -11,15 +10,8 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.core.constants import (
-    COS_INIT_SCRIPT,
-    COS_SKILLS_ARCHIVE,
-    GAME_SERVER_ENSURE_COMMAND,
-    GAME_SERVER_PORT,
-    SANDBOX_INIT_MARKER,
-    SANDBOX_SKILLS_TMP,
-)
-from app.core.exceptions import NotFoundError, UpstreamError
+from app.core.constants import GAME_SERVER_ENSURE_COMMAND, GAME_SERVER_PORT
+from app.core.exceptions import NotFoundError
 from app.gateways.ags import AgsGateway
 from app.gateways.cos import CosGateway
 from app.gateways.pg_admin import PgAdminGateway
@@ -39,21 +31,6 @@ def _resolve(thread_id: uuid.UUID, session: Session) -> tuple[GameThread, Game]:
     return thread, game
 
 
-def _ensure_init(*, sandbox_id: str, ags: AgsGateway, cos: CosGateway) -> None:
-    code, _, _ = ags.run(sandbox_id, f"test -f {SANDBOX_INIT_MARKER}", timeout=30)
-    if code == 0:
-        return
-    skills = cos.get_bytes(cos.platform_key(COS_SKILLS_ARCHIVE))
-    if skills is not None:
-        ags.write_file(sandbox_id, SANDBOX_SKILLS_TMP, skills)
-    script = cos.get_bytes(cos.platform_key(COS_INIT_SCRIPT))
-    if script is None:
-        raise UpstreamError("沙盒初始化脚本缺失：请先执行 `make sandbox-assets-publish`")
-    code, out, err = ags.run(sandbox_id, script.decode("utf-8"), timeout=600)
-    if code != 0:
-        raise UpstreamError(f"沙盒初始化失败：{(err or out)[-500:]}")
-
-
 def _ensure_server_running(*, sandbox_id: str, ags: AgsGateway) -> None:
     """确保游戏服务进程在运行。"""
     ags.run(sandbox_id, GAME_SERVER_ENSURE_COMMAND, timeout=180)
@@ -70,7 +47,6 @@ def ensure_for_thread(
     thread, game = _resolve(thread_id, session)
     game_id = str(game.game_id)
     cos.ensure_game_prefixes(game.game_id)
-    cos.seed_workspace(game.game_id)
     database_url = pg_admin.game_database_url(game_id)
     sandbox_id, created = ags.ensure(
         game_id=game_id,
@@ -79,7 +55,6 @@ def ensure_for_thread(
     )
     if game.sandbox_id != sandbox_id:
         game_repository.set_sandbox_id(session, game_id=game.game_id, sandbox_id=sandbox_id)
-    _ensure_init(sandbox_id=sandbox_id, ags=ags, cos=cos)
     _ensure_server_running(sandbox_id=sandbox_id, ags=ags)
     return {
         "thread_id": thread_id,

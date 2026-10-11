@@ -10,7 +10,7 @@
 
 ## 结构与约定
 
-- `core/`：config / constants（路径与内部接口契约，改动必须与 api、sandbox/init.sh 同步）。
+- `core/`：config / constants（路径与内部接口契约，改动必须与 api、sandbox/image 镜像同步）。
 - `infra/`：`ags.py`（连接既有沙盒）、`ags_backend.py`（deepagents `BaseSandbox` 适配）、`model.py`（可配置模型）。
 - `tools/`：每个工具一个文件，工厂函数 `make_xxx_tool(...)`；工具返回中文可读字符串，不抛堆栈。
 - `prompts/game.py`：系统提示词（生成区边界、素材规则、发布纪律）。

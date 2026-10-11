@@ -17,6 +17,8 @@ from agent.core.constants import SANDBOX_DEFAULT_EXEC_TIMEOUT_SECONDS
 
 
 class AgsBackend(BaseSandbox):
+    enable_capture_offload = True
+
     def __init__(self, *, sandbox: Sandbox) -> None:
         self._sandbox = sandbox
         self._default_timeout = SANDBOX_DEFAULT_EXEC_TIMEOUT_SECONDS

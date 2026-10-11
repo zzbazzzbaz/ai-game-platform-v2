@@ -8,6 +8,7 @@
 |---|---|---|
 | `apps/api/` | FastAPI 平台后端；唯一持云凭证与 PG 管理凭证；认证签发方 | Python 工程（uv） |
 | `apps/agent/` | LangGraph Server + deepagents；只持沙盒访问权（E2B Key）与内部令牌 | Python 工程（uv） |
+| `sandbox/` | 沙盒资产：`image/`（AGS 自定义镜像 Dockerfile + 启动脚本）、`game-template/`（游戏工程模板）、`assets/skills/`（Phaser 技能库） | 镜像/资产 |
 | `docs/` | 规格与讨论记录（`docs/db/` 为数据库说明） | 文档 |
 
 ## 开发环境拓扑（本阶段）
@@ -19,8 +20,8 @@
 ## 跨服务契约（改动必须同步）
 
 - 命名根：`game_id`（UUID）；`sid = game_id 去掉"-"`（32 位十六进制）；所有外部资源命名只由 game_id 推导。
-- 沙盒（AGS `aio` 预置）：`metadata.game_id = game_id`；工作区 `/workspace/work`（COS `games/{game_id}/`）、素材 `/workspace/input`（只读）、依赖 `/opt/deps`、skills `/opt/skills`。
-- COS 前缀：游戏资产 `games/{game_id}/**`；版本包 `games/{game_id}/versions/{seq}.tar`；平台资产 `platform/**`。
+- 沙盒（AGS `custom` 自建镜像 `sandbox/image/`）：`metadata.game_id = game_id`；工作区 `/workspace/work`（COS `games/{game_id}/`，镜像 entrypoint 在空工作区时从 `/opt/game-template` 播种）、素材 `/workspace/input`（只读）、依赖 `/opt/game-template/node_modules`（软链到工作区）、skills `/opt/skills`；浏览器栈 NoVNC `:9000`、envd `:49983`。
+- COS 前缀：游戏资产 `games/{game_id}/**`；版本包 `games/{game_id}/versions/{seq}.tar`。
 - 托管服务名：`g-{sid}`（云托管服务名上限 36 字符，`game-{game_id}` 超限；仍仅由 game_id 派生）。
 - 游戏数据库：`game_{sid}`、role `game_{sid}_rw`，密码 = `base64url(HMAC-SHA256(GAME_DB_PASSWORD_MASTER_SECRET, game_id))`；开通必须 `REVOKE CONNECT ... FROM PUBLIC` 且幂等（不重建、不改密码）。
 - 内部接口（agent → api，`X-Internal-Token`，请求/响应模型以 `apps/api/app/api/schemas/internal.py` 为唯一权威）：
