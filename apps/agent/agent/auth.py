@@ -1,6 +1,8 @@
-"""LangGraph 鉴权：平台 JWT 本地验签（RS256 + JWKS 缓存）。
+"""LangGraph 鉴权：平台 JWT 本地验签（RS256 + JWKS 缓存）+ 资源级用户隔离。
 
 - 不引入「由一方代验」的中转接口；公钥按 kid 缓存，日常请求不调外部服务。
+- 认证只回答「是谁」；资源的读写授权由 @auth.on 处理器决定（LangGraph 自定义鉴权
+  对未注册的 resource/action 是 fail-open，因此必须显式覆盖，见下方各处理器）。
 """
 
 import asyncio
@@ -52,3 +54,38 @@ async def authenticate(authorization: str | None) -> Auth.types.MinimalUserDict:
             status_code=503, detail="鉴权服务不可用，请稍后重试"
         ) from e
     return {"identity": payload["sub"]}
+
+
+@auth.on.threads.create
+async def stamp_thread_owner(
+    ctx: Auth.types.AuthContext,
+    value: Auth.types.on.threads.create.value,
+) -> dict[str, str]:
+    """会话创建：把 owner 写入 metadata，作为后续所有过滤的依据。"""
+    value.setdefault("metadata", {})["owner"] = ctx.user.identity
+    return {"owner": ctx.user.identity}
+
+
+@auth.on.threads.create_run
+async def stamp_run_owner(
+    ctx: Auth.types.AuthContext,
+    value: Auth.types.on.threads.create_run.value,
+) -> dict[str, str]:
+    """发起 run：过滤非本人会话；线程若由 run 隐式创建，同样写入 owner。"""
+    value.setdefault("metadata", {})["owner"] = ctx.user.identity
+    return {"owner": ctx.user.identity}
+
+
+@auth.on.threads
+async def filter_own_threads(
+    ctx: Auth.types.AuthContext,
+    value: Auth.types.on.threads.value,
+) -> dict[str, str]:
+    """其余会话动作（read / update / delete / search）按 owner 过滤，非本人视为不存在。"""
+    return {"owner": ctx.user.identity}
+
+
+@auth.on
+async def deny_unhandled(ctx: Auth.types.AuthContext, value: object) -> None:
+    """未显式放行的资源（assistants / crons / store 等）默认拒绝。"""
+    raise Auth.exceptions.HTTPException(status_code=403, detail="禁止访问该资源")
