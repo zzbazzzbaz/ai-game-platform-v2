@@ -5,7 +5,7 @@
 | 能力 | 组件 |
 |---|---|
 | 浏览器 | Xvfb（:0，1280x720）+ x11vnc + noVNC/websockify（**9000**）+ Chromium 应用窗口（自动打开 `http://localhost:3000`） |
-| 程序执行 | envd（**49983**，命令/文件接口）+ Node 20 + Python3 + Playwright（Python/Node，Chromium 已装） |
+| 程序执行 | envd（**49983**，命令/文件接口）+ Node 24 + Python3 + Playwright（Python/Node，Chromium 已装） |
 | 工作区 | `/workspace/work`（COS 挂载；为空时 entrypoint 从镜像模板播种）、`/workspace/input`（只读） |
 | 预装资产 | 游戏模板及依赖 `/opt/game-template`（`npm ci` 已烘焙，工作区软链 `node_modules`）、技能库 `/opt/skills` |
 
@@ -25,8 +25,8 @@
 cd sandbox
 docker login ccr.ccs.tencentyun.com
 docker build -f image/Dockerfile --platform=linux/amd64 \
-  -t ccr.ccs.tencentyun.com/aigame/sandbox:rev3 .
-docker push ccr.ccs.tencentyun.com/aigame/sandbox:rev3
+  -t ccr.ccs.tencentyun.com/aigame/sandbox:rev4 .
+docker push ccr.ccs.tencentyun.com/aigame/sandbox:rev4
 ```
 
 ## 创建 / 更新 AGS 工具
@@ -35,12 +35,12 @@ docker push ccr.ccs.tencentyun.com/aigame/sandbox:rev3
 
 ```bash
 agr tool create -n ai-game-platform-sandbox -t custom \
-  -d "AI 游戏平台沙盒：浏览器(NoVNC)+Node20+Playwright+envd" \
+  -d "AI 游戏平台沙盒：浏览器(NoVNC)+Node24+Playwright+envd" \
   --network-configuration '{"NetworkMode":"PUBLIC"}' \
   --role-arn qcs::cam::uin/100037354656:roleName/ai-game-platform-test-role \
   --storage-mounts '[{"Name":"work","MountPath":"/workspace/work","StorageSource":{"Cos":{"BucketName":"ai-game-platform-test-1327210567","BucketPath":"/games","Endpoint":"ai-game-platform-test-1327210567.cos.ap-shanghai.myqcloud.com"}}}]' \
   --custom-configuration '{
-    "Image": "ccr.ccs.tencentyun.com/aigame/sandbox:rev3",
+    "Image": "ccr.ccs.tencentyun.com/aigame/sandbox:rev4",
     "ImageRegistryType": "personal",
     "Command": ["/bin/bash"],
     "Args": ["-lc", "/opt/sandbox/entrypoint.sh"],
@@ -65,7 +65,7 @@ agr tool create -n ai-game-platform-sandbox -t custom \
 ## 本地冒烟（可选）
 
 ```bash
-docker run --rm -it -p 49983:49983 -p 9000:9000 ccr.ccs.tencentyun.com/aigame/sandbox:rev3
+docker run --rm -it -p 49983:49983 -p 9000:9000 ccr.ccs.tencentyun.com/aigame/sandbox:rev4
 # 容器内起游戏服务后，浏览器窗口会自动打开；本机浏览器访问 noVNC：
 #   http://localhost:9000/novnc/vnc.html?path=websockify&autoconnect=1&resize=scale
 ```
