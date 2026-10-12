@@ -42,3 +42,4 @@
 - 同步模式：api 路由用 `def` + 同步 `Session`，不引入 async SQLAlchemy。
 - 分层依赖方向：`api → services → repositories → models`，`gateways`/`core` 可被任意层引用；业务错误用 `app/core/exceptions.py` 的异常类，由全局 handler 映射，禁止路由写 try/except 错误映射。
 - 删除文件用 `trash`，不用 `rm`；文档/注释/错误信息用中文。
+- 测试：`make test`（= `cd apps/api && uv run pytest`），用例在 `apps/api/tests/`，跑在独立库 `aigame_platform_test`（自动建/删）；**任何测试都不得指向开发库 `aigame_platform`**（conftest 有硬性护栏）。

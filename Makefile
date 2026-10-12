@@ -1,4 +1,4 @@
-.PHONY: up down install jwt-keys run-api run-agent
+.PHONY: up down install jwt-keys run-api run-agent test
 
 ENV_FILE := $(CURDIR)/apps/.env
 
@@ -23,3 +23,6 @@ run-api:
 
 run-agent:
 	cd apps/agent && uv run --env-file $(ENV_FILE) langgraph dev --no-reload --n-jobs-per-worker 4
+
+test:
+	cd apps/api && uv run pytest

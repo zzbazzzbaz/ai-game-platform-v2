@@ -36,8 +36,14 @@ missing-type-argument = "error"
 possibly-unresolved-reference = "warn"
 unsound-return-statement = "error"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+filterwarnings = ["ignore::starlette.exceptions.StarletteDeprecationWarning"]
+
 [dependency-groups]
 dev = [
+    "pytest>=9.1.1",
     "ruff==0.16.10",
     "ty==0.0.84",
 ]

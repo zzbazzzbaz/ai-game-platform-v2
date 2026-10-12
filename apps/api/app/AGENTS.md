@@ -23,3 +23,4 @@
 - 已锁定决策（不要再翻案）：同步模式（路由用 `def`、同步 `Session`，不引入 async SQLAlchemy）；DTO 归属 `api/schemas/`；自定义异常 + `api/errors.py` 全局 handler；错误 `detail` 用中文。
 - 新增 DB 访问先加 repository 方法，再由 service 调用。
 - 内部接口 `/api/v1/internal/**` 只给 agent：走 `InternalDep`（`X-Internal-Token`），模型以 `api/schemas/internal.py` 为唯一权威。
+- 沙盒 ensure（`services/sandbox_service.py`）的并发安全依赖 `game_repository.lock()`：`games` 行锁覆盖「读 sandbox_id → 创建/复用沙盒 → 写 sandbox_id」，同一 game 串行化；COS 前缀/连接串准备与保活命令必须在锁外。回归用例 `tests/test_sandbox_ensure.py::test_concurrent_ensure_creates_single_sandbox`（改动 ensure 必须让它保持通过）。
