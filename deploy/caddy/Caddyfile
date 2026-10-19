@@ -2,16 +2,15 @@
 # 变量来自 systemd drop-in 的 EnvironmentFile=/srv/ai-game-platform/caddy.env（DOMAIN / ACME_EMAIL）
 # 上游：127.0.0.1:8081 web ｜ 8082 api ｜ 8083 agent
 #
-# 当前只监听 80（轻量防火墙未放行 443）。放行后切 HTTPS 三步：
-#   1) 删掉 auto_https off；2) 站点地址 http://{$DOMAIN} 改成 {$DOMAIN}
-#   3) 服务器 .env 的 JWT_ISSUER / CORS_ORIGINS 改 https:// 后重建 api 与 agent
+# HTTPS：证书由 Caddy 自动申请并续期（需 80/443 都可从公网访问）；80 端口自动 308 跳转到 https。
+# 若哪天 443 又被关掉（证书无法续期），临时切回 HTTP 三步：加回 auto_https off、
+# 站点地址写成 http://{$DOMAIN}、服务器 .env 的 JWT_ISSUER / CORS_ORIGINS 改回 http://。
 
 {
 	email {$ACME_EMAIL}
-	auto_https off
 }
 
-http://{$DOMAIN} {
+{$DOMAIN} {
 	encode zstd gzip
 
 	handle /api/* {

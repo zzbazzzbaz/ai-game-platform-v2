@@ -24,8 +24,9 @@
 ## 生产/测试部署拓扑（`deploy/`）
 
 - 服务器 `43.129.212.75`（腾讯云**轻量**香港）；域名 `ai-game-platform.test.chatgqt.top`。
-- ⚠️ 轻量防火墙当前**只放行 80**（443 未开）→ Caddy 以 `http://` 提供服务（`auto_https off`），
-  `JWT_ISSUER`/`CORS_ORIGINS` 也必须是 `http://`。放行 443 后按 `deploy/caddy/Caddyfile` 顶部注释三处切回 HTTPS。
+- **HTTPS 已启用**（轻量防火墙已放行 443）：Caddy 自动申请/续期 Let's Encrypt 证书，80 端口自动 308 跳转到 https；
+  `JWT_ISSUER`/`CORS_ORIGINS` 均为 `https://<域名>`。⚠️ 证书续期依赖 80/443 长期可从公网访问，
+  若 443 被关掉，按 `deploy/caddy/Caddyfile` 顶部注释临时切回 HTTP。
 - **公网 HTTP 唯一入口 = 宿主机系统级 Caddy**（systemd，`/etc/caddy/Caddyfile` 软链到 `/srv/ai-game-platform/caddy/Caddyfile`）；容器全部在内网：
   `web`/`api`/`agent` 只绑 `127.0.0.1:8081/8082/8083`，由 Caddy 按路径同源反代（`/api/*`→api、`/lg/*`→agent 去前缀、`/`→web）。
 - 数据容器：`postgres-games`（**0.0.0.0:10050**，数据库协议直连不走 Caddy，`hostssl` 强制 TLS）、`postgres-platform`、`langgraph-pg`（pgvector）、`langgraph-redis`（均不发布端口）。

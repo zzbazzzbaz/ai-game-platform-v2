@@ -81,7 +81,7 @@ chmod 644 "$ROOT/secrets/jwt/jwt_public.pem"
 
 # Caddy 启动前 /etc/caddy/Caddyfile 必须存在：首次部署前放占位配置
 if [ ! -s "$ROOT/caddy/Caddyfile" ]; then
-	printf '{\n\temail %s\n}\n\nhttp://%s {\n\trespond "waiting for deploy" 503\n}\n' \
+	printf '{\n\temail %s\n}\n\n%s {\n\trespond "waiting for deploy" 503\n}\n' \
 		"$ACME_EMAIL" "$DOMAIN" >"$ROOT/caddy/Caddyfile"
 fi
 chown "$DEPLOY_USER:$DEPLOY_USER" "$ROOT/caddy/Caddyfile"

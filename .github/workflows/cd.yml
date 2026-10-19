@@ -71,13 +71,22 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
             "chmod +x $DEPLOY_ROOT/scripts/*.sh && TAG=$TAG $DEPLOY_ROOT/scripts/deploy.sh"
 
-      - name: 公网健康检查
+      - name: 公网健康检查（HTTPS）
         run: |
-          # 走 HTTP 因轻量防火墙未放行 443；必须带超时，否则端口被丢弃时会挂死
-          for i in $(seq 1 24); do
-            code=$(curl -s -o /dev/null -m 8 --connect-timeout 5 -w '%{http_code}' "http://$SITE_DOMAIN/health" || true)
+          # 切域名/首次签发时证书要现签，必须带超时重试；端口被丢弃时 curl 会挂死
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -m 8 --connect-timeout 5 -w '%{http_code}' "https://$SITE_DOMAIN/health" || true)
             echo "第 $i 次探测：HTTP $code"
             [ "$code" = "200" ] && break
             sleep 5
           done
-          curl -fsS -m 15 "http://$SITE_DOMAIN/health"
+          curl -fsS -m 15 "https://$SITE_DOMAIN/health"
+          echo
+
+      - name: 校验证书与 HTTP 跳转
+        run: |
+          openssl s_client -connect "$SITE_DOMAIN:443" -servername "$SITE_DOMAIN" </dev/null 2>/dev/null \
+            | openssl x509 -noout -subject -issuer -dates
+          # 必须是受信任证书（自签/过期会在这里失败）
+          curl -fsS -o /dev/null -w '证书校验：ssl_verify_result=%{ssl_verify_result}（0 = 通过）\n' "https://$SITE_DOMAIN/health"
+          curl -s -o /dev/null -m 15 -w 'HTTP 跳转：%{http_code} -> %{redirect_url}\n' "http://$SITE_DOMAIN/health"
