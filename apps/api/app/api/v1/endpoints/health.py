@@ -7,5 +7,5 @@ router = APIRouter(tags=["health"])
 
 @router.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
-    """存活探针：compose healthcheck 与 CI 公网健康检查都用它。"""
+    """存活探针（compose healthcheck / CI 健康检查）。"""
     return HealthResponse(ok=True)

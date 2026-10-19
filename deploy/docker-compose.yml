@@ -1,21 +1,11 @@
-# AI 游戏平台 · 服务器部署栈（生产/测试环境）
-#
-# 拓扑：公网 HTTP 流量一律由宿主机系统级 Caddy（systemd）反向代理，
-#       三个 Web 容器只绑定 127.0.0.1，公网无法绕过 Caddy 直达；
-#       postgres-games 的 10050 是数据库协议（AGS 沙盒直连），不走 Caddy。
-#
-# 用法（在 /srv/ai-game-platform 下）：
-#   TAG=sha-xxxx docker compose --env-file .env pull
+# AI 游戏平台 · 服务器部署栈（在 /srv/ai-game-platform 下执行）
 #   TAG=sha-xxxx docker compose --env-file .env up -d --remove-orphans
-# 回滚：把 TAG 换成上一个 commit 的同款 tag 再执行一次。
 name: ai-game-platform
 
 x-log: &log
   logging: { driver: json-file, options: { max-size: "10m", max-file: "3" } }
 
 services:
-  # ---------------------------------------------------------------- 前端 ----
-  # frontent-test-1：Vite 构建产物 + nginx 静态托管（SPA fallback）
   web:
     <<: *log
     image: "${WEB_IMAGE}:${TAG}"
@@ -29,19 +19,16 @@ services:
       timeout: 5s
       retries: 3
 
-  # ----------------------------------------------------------------- api ----
   api:
     <<: *log
     image: "${API_IMAGE}:${TAG}"
     restart: unless-stopped
     env_file: [.env]
     environment:
-      # 容器内地址覆盖：平台库走 compose 内网；游戏库管理员显式走内网服务名
       PLATFORM_DATABASE_URL: "postgresql+psycopg://${POSTGRES_PLATFORM_USER}:${POSTGRES_PLATFORM_PASSWORD}@postgres-platform:5432/${POSTGRES_PLATFORM_DB}?sslmode=disable"
       PG_ADMIN_HOST: postgres-games
       PG_ADMIN_PORT: "5432"
     volumes:
-      # JWT 私钥/公钥：不进镜像、不进 git
       - ./secrets/jwt:/app/.keys:ro
     ports: ["127.0.0.1:8082:8000"]
     networks: [app, data]
@@ -56,14 +43,12 @@ services:
       retries: 5
       start_period: 20s
 
-  # --------------------------------------------------------------- agent ----
   agent:
     <<: *log
     image: "${AGENT_IMAGE}:${TAG}"
     restart: unless-stopped
     env_file: [.env]
     environment:
-      # 容器内地址覆盖：内部接口与 JWKS 走内网，不绕公网
       API_INTERNAL_URL: http://api:8000
       JWKS_URL: http://api:8000/.well-known/jwks.json
       POSTGRES_URI: "postgres://postgres:${LANGGRAPH_PG_PASSWORD}@langgraph-pg:5432/postgres?sslmode=disable"
@@ -82,7 +67,7 @@ services:
       retries: 10
       start_period: 60s
 
-  # ------------------------------------------------------- 游戏库（公网）----
+  # 游戏库：AGS 沙盒经公网直连（数据库协议，不走 Caddy），强制 TLS
   postgres-games:
     <<: *log
     image: postgres:17.11
@@ -121,7 +106,6 @@ services:
       timeout: 5s
       retries: 10
 
-  # --------------------------------------------------- 平台元数据库（内网）----
   postgres-platform:
     <<: *log
     image: postgres:17.11
@@ -130,7 +114,7 @@ services:
       POSTGRES_USER: "${POSTGRES_PLATFORM_USER}"
       POSTGRES_PASSWORD: "${POSTGRES_PLATFORM_PASSWORD}"
       POSTGRES_DB: "${POSTGRES_PLATFORM_DB}"
-    volumes: [pg-platform-data:/var/lib/postgresql/data]
+    volumes: ["pg-platform-data:/var/lib/postgresql/data"]
     networks: [data]
     mem_limit: 384m
     healthcheck:
@@ -139,7 +123,6 @@ services:
       timeout: 5s
       retries: 10
 
-  # ------------------------------------------ LangGraph 状态库 / 队列（内网）----
   langgraph-pg:
     <<: *log
     image: pgvector/pgvector:pg17
@@ -147,7 +130,7 @@ services:
     command: ["postgres", "-c", "shared_buffers=64MB", "-c", "max_connections=100"]
     environment:
       POSTGRES_PASSWORD: "${LANGGRAPH_PG_PASSWORD}"
-    volumes: [langgraph-pg-data:/var/lib/postgresql/data]
+    volumes: ["langgraph-pg-data:/var/lib/postgresql/data"]
     networks: [data]
     mem_limit: 384m
     healthcheck:

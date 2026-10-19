@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
-# AI 游戏平台 · 每日备份（本机保留 7 天 + 上传 COS）
-#
-# 用法：scripts/backup.sh
-# 定时：crontab -e 增加
-#         0 4 * * * /srv/ai-game-platform/scripts/backup.sh >> /srv/ai-game-platform/backups/backup.log 2>&1
+# 每日备份：本机保留 7 天 + 上传 COS（systemd timer ai-game-backup.timer 调用）
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -19,21 +15,19 @@ mkdir -p "$DEST"
 PLATFORM_DUMP="$DEST/platform-$STAMP.dump"
 GAMES_DUMP="$DEST/games-$STAMP.sql.gz"
 
-echo "==> 平台元数据库（-Fc）"
+echo "==> 平台元数据库"
 docker compose exec -T postgres-platform \
 	pg_dump -Fc -U "$POSTGRES_PLATFORM_USER" -d "$POSTGRES_PLATFORM_DB" >"$PLATFORM_DUMP"
 
-echo "==> 游戏库整实例（含 game_xxx 库与角色，SQL+gzip）"
+echo "==> 游戏库整实例"
 docker compose exec -T postgres-games pg_dumpall -U postgres | gzip -9 >"$GAMES_DUMP"
 
-echo "==> 保留最近 7 天"
 find "$DEST" -type f \( -name 'games-*.sql.gz' -o -name 'platform-*.dump' \) -mtime +7 -delete
 
 if [ -n "${COS_BUCKET:-}" ] && [ -n "${COS_SECRET_ID:-}" ]; then
-	echo "==> 上传 COS: bucket=$COS_BUCKET"
+	echo "==> 上传 COS: $COS_BUCKET"
 	for f in "$PLATFORM_DUMP" "$GAMES_DUMP"; do
-		# 借用 api 镜像里的 cos-python-sdk-v5；备份目录只读挂进容器
-		# 注意 -i：python 从 stdin 读脚本，不挂 stdin 会静默什么都不做
+		# -i 必需：python 从 stdin 读脚本，缺了会静默不执行
 		docker run --rm -i --env-file ./.env -v "$PWD/backups:/backups:ro" \
 			--entrypoint python "${API_IMAGE}:${TAG:-main}" - "$(basename "$f")" <<'PY'
 import os
@@ -60,5 +54,4 @@ else
 	echo "跳过 COS 上传（未配置 COS_BUCKET / COS_SECRET_ID）"
 fi
 
-echo "==> 备份文件"
 ls -lh "$DEST" | tail -n 5

@@ -1,10 +1,5 @@
-# AI 游戏平台 · CI/CD
-#
-# pull_request：只跑测试
-# push main   ：测试 → 构建并推送三个镜像到 GHCR → SSH 到服务器拉取镜像重建容器
-# 手动        ：workflow_dispatch
-#
-# 回滚：把服务器上的 TAG 换成上一个 sha-<commit> 再执行 scripts/deploy.sh（见 deploy/scripts/deploy.sh）
+# CI/CD：PR 只跑测试；push main → 构建三镜像推 GHCR → SSH 到服务器拉取重建
+# 回滚：TAG=sha-<上一个 commit> 执行服务器上的 scripts/deploy.sh
 name: ci-cd
 
 on:
@@ -23,16 +18,13 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # GHCR 镜像前缀（三个镜像：api / agent / web）
   IMAGE_PREFIX: ghcr.io/${{ github.repository }}
-  # 公网域名（健康检查用）
   SITE_DOMAIN: ai-game-platform.test.chatgqt.top
   DEPLOY_HOST: 43.129.212.75
   DEPLOY_USER: guoqitong
   DEPLOY_ROOT: /srv/ai-game-platform
 
 jobs:
-  # ------------------------------------------------------------ 测试 ----
   test:
     name: 测试（api + 前端）
     runs-on: ubuntu-latest
@@ -94,7 +86,6 @@ jobs:
           npm run lint
           npm run build
 
-  # ------------------------------------------------------------ 构建 ----
   build:
     name: 构建镜像 ${{ matrix.app }}
     needs: [test]
@@ -133,7 +124,6 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.app }}
           cache-to: type=gha,scope=${{ matrix.app }},mode=max
 
-  # ------------------------------------------------------------ 部署 ----
   deploy:
     name: 部署（SSH 拉镜像重建容器）
     needs: [build]
@@ -171,8 +161,7 @@ jobs:
 
       - name: 公网健康检查
         run: |
-          # 当前腾讯云轻量防火墙只放行 80（443 未开），故走 HTTP；开 443 后把这里改回 https
-          # 必须带超时：端口被防火墙丢弃时 curl 会挂满 300s，24 次重试足以把 job 卡死
+          # 走 HTTP 因轻量防火墙未放行 443；必须带超时，否则端口被丢弃时会挂死
           for i in $(seq 1 24); do
             code=$(curl -s -o /dev/null -m 8 --connect-timeout 5 -w '%{http_code}' "http://$SITE_DOMAIN/health" || true)
             echo "第 $i 次探测：HTTP $code"
