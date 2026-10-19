@@ -33,7 +33,7 @@
   `web`/`api`/`agent` 只绑 `127.0.0.1:8081/8082/8083`，Caddy 按路径同源反代（`/api/*`→api、`/lg/*`→agent 去前缀、`/`→web）。
 - 数据容器：`postgres-games`（**0.0.0.0:10050**，数据库协议直连不走 Caddy，`hostssl` 强制 TLS）、`postgres-platform`、`langgraph-pg`（pgvector）、`langgraph-redis`（均不发布端口）。
 - 配置源：服务器 `/srv/ai-game-platform/.env`（600，不进 git，样板见 `apps/.env.example`）。
-- 发布节奏：push 只跑 CI（构建 `sha-<commit>` + `main` 两个 tag），**不自动上生产**；部署手动 `gh workflow run cd.yml -f tag=main`，回滚 `-f tag=sha-<旧 commit>`（等价于服务器上 `TAG=<tag> scripts/deploy.sh`）。
+- 发布节奏：push 只跑 CI（构建 `sha-<commit>` + `main` 两个 tag），**不自动上生产**；部署手动 `gh workflow run cd.yml -f tag=main`，回滚 `-f tag=sha-<旧 commit>`。部署逻辑（校验 Caddyfile → 拉镜像 → 重建 → 重载 Caddy）内联在 `cd.yml` 里，服务器上没有部署脚本。
 - 镜像：GHCR `ghcr.io/zzbazzzbaz/ai-game-platform-v2/{api,agent,web}`（public）。
 - ⚠️ `GAME_DB_SSLMODE` **必须 `no-verify`**：沙盒内 node `pg` 的 `pg-connection-string@2.14` 把 `sslmode=require` 当作 `verify-full`，自签证书下会连不上。
 

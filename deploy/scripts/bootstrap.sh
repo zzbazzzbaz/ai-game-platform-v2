@@ -122,4 +122,4 @@ EOF
 systemctl daemon-reload
 systemctl enable --now ai-game-backup.timer
 
-log "完成：$ROOT（下一步把 .env 放到该目录并执行 scripts/deploy.sh）"
+log "完成：$ROOT（下一步把 .env 放到该目录，再在开发机执行 gh workflow run cd.yml -f tag=main）"

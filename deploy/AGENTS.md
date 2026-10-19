@@ -10,13 +10,15 @@
 
 | 路径 | 作用 | 谁在用 |
 |---|---|---|
-| `docker-compose.yml` | 服务器全部 7 个容器 | `scripts/deploy.sh` / 手工 `docker compose` |
+| `docker-compose.yml` | 服务器全部 7 个容器 | `.github/workflows/cd.yml` / 手工 `docker compose` |
 | `caddy/Caddyfile` | 系统级 Caddy：HTTPS + 按路径同源反代 | 软链为 `/etc/caddy/Caddyfile` |
 | `docker/{api,agent,web}.Dockerfile` | 三个业务镜像，构建上下文分别是 `apps/api`、`apps/agent`、`apps/frontent-test-1` | **只在 CI 构建**，服务器从不构建镜像 |
 | `initdb/*.sh` | 游戏库首启初始化（管理员角色、强制 `hostssl`） | `postgres-games` **空数据卷**首启时按文件名顺序执行 |
 | `scripts/bootstrap.sh` | 一次性初始化：docker 组、装 Caddy、目录与权限、自签证书、JWT 密钥、systemd 单元 | 手工 `sudo` 跑，幂等 |
-| `scripts/deploy.sh` | 部署与回滚的唯一入口 | CI（`cd.yml`）与手工 |
 | `scripts/backup.sh` | 备份平台库与游戏库并传 COS，本机留 7 天 | systemd timer `ai-game-backup.timer`（每日 04:00，`Persistent=true`） |
+
+**部署动作不在本目录**：部署/回滚的步骤内联在 `.github/workflows/cd.yml`（`gh workflow run cd.yml -f tag=…`），
+服务器上不再有部署脚本；`deploy/scripts/` 只剩一次性初始化与备份。
 
 服务器本地文件（**不进 git**）：`.env`（600，唯一业务配置源）、`caddy.env`（`DOMAIN`/`ACME_EMAIL`，644，由 systemd drop-in `caddy.service.d/override.conf` 注入）、
 `secrets/jwt/`（JWT 密钥对）、`secrets/pg-tls/`（游戏库自签证书）、`backups/`（dump + `backup.log`）。
@@ -52,16 +54,16 @@
 ## 硬约束
 
 1. **配置只放 `.env`**：compose 的 `${...}` 插值全部来自 `/srv/ai-game-platform/.env`（`docker compose --env-file .env ...`）；新增变量必须同时补进 `apps/.env.example`；`.env` 不进 git、保持 600。
-2. **镜像 tag 必须显式**：`TAG=sha-<40 位 commit>`；`deploy.sh` 无默认值，缺失即退出；不写 `latest`。
+2. **镜像 tag 必须显式**：只接受 `main` 或 `sha-<40 位 commit>`（`cd.yml` 第一步就校验格式），`latest` 一律不用。
 3. **端口纪律**：`web`/`api`/`agent` 只绑 `127.0.0.1`，公网只经 Caddy；唯一例外是 `postgres-games` 的 `10050`（数据库协议直连，不走 Caddy，强制 TLS）。
-4. **文件权限**（容器内以非 root 身份读，`deploy.sh` 每次会兜底修一部分）：
+4. **文件权限**（容器内以非 root 身份读，CD 每次部署会兜底修一部分）：
    - `caddy/Caddyfile` 644 —— 600 会让 `systemctl reload caddy` 报 `permission denied`
    - `scripts/*.sh`、`initdb/*.sh` 755；`docker-compose.yml` 644
    - `secrets/jwt/*` 属主 **10001**（api 镜像内 app 用户；uid 写死在 `api.Dockerfile`），`jwt_private.pem` 600
    - `secrets/pg-tls/*` 属主 **999**（postgres 官方镜像内 postgres 用户），`server.key` 600、`server.crt` 644
    - `.env` 600、`caddy.env` 644
 5. **改 Caddyfile 必须先 `caddy validate` 再 reload**；reload 走 sudoers 白名单 `sudo -n systemctl reload caddy`，不要 `restart`（会掐断在途 SSE）。
-6. **不要在服务器上手改 `docker-compose.yml` / `caddy/` / `initdb/` / `scripts/`**：CD 每次 `scp -r` 覆盖这四个路径。配置改 `.env`，其余改仓库。
+6. **不要在服务器上手改 `docker-compose.yml` / `caddy/` / `initdb/` / `scripts/`**：CD 每次先 `rm -rf` 这四处再 `scp -r`，服务器内容始终等于仓库（仓库里删掉的文件也会跟着消失）。配置改 `.env`，其余改仓库。
 7. **`initdb/*.sh` 只在空数据卷执行一次**：改它对已初始化的库无效，需要手工 `psql`，或在确认可丢数据后 `docker compose down -v`（先备份）。
 8. **HTTPS 与 issuer 联动**：切域名/切协议要同时改四处 —— `caddy.env` 的 `DOMAIN`、Caddyfile 站点地址、`.env` 的 `JWT_ISSUER` 与 `CORS_ORIGINS`。改 issuer 会让**已签发的 token 全部失效**（需要重新登录），属预期行为。
 9. compose 里 flow 风格挂载必须加引号（`volumes: ["pg-platform-data:/var/lib/postgresql/data"]`），否则严格 YAML 解析器（Ruby psych 等）会拒绝。
@@ -82,8 +84,9 @@
 sudo DOMAIN=ai-game-platform.test.chatgqt.top ACME_EMAIL=admin@chatgqt.top bash deploy/scripts/bootstrap.sh
 # 然后放 .env：照抄 apps/.env.example，按文件头改 16 项，chmod 600
 
-# 部署 / 回滚（服务器上，幂等）
-TAG=sha-<40 位 commit> scripts/deploy.sh
+# 部署 / 回滚不在服务器上做，走开发机的 gh workflow（见下）。
+# 应急（GitHub 不可用时）手工执行 CD 的那几步：
+docker compose --env-file .env pull && docker compose --env-file .env up -d --remove-orphans
 # 只重启某个服务（改完 .env 后）
 docker compose --env-file .env up -d api agent
 # 状态与日志
@@ -109,7 +112,7 @@ curl -fsS https://ai-game-platform.test.chatgqt.top/health
 |---|---|---|
 | `docker compose pull` 报 unauthorized | 服务器未登录 GHCR（包为私有） | `cd.yml` 已用任务级 `GITHUB_TOKEN` 登录；手工部署则先 `docker login ghcr.io` |
 | `systemctl reload caddy` permission denied | Caddyfile 不是 644 | `chmod 644 caddy/Caddyfile` 后重试 |
-| 站点 503 `waiting for deploy` | 只跑了 bootstrap，Caddyfile 还是占位配置 | 执行 `scripts/deploy.sh` |
+| 站点 503 `waiting for deploy` | 只跑了 bootstrap，Caddyfile 还是占位配置 | 在开发机跑一次 CD（`gh workflow run cd.yml -f tag=main`） |
 | 443 不通 / 证书签发失败 | 轻量防火墙未放行 443（续期还需 80） | 控制台放行后 reload；临时可切回 HTTP（见 `caddy/Caddyfile` 顶部注释） |
 | 沙盒连不上游戏库 | 远程连接没走 TLS（pg_hba 只剩 `hostssl`）或被 `require` 当成 `verify-full` | 沙盒侧 `GAME_DB_SSLMODE=no-verify` |
 | 容器起来就 unhealthy | `.env` 缺变量（配置 fail-fast） | `docker compose --env-file .env logs <svc>` 找到缺失项，补 `.env` 后 `up -d` |

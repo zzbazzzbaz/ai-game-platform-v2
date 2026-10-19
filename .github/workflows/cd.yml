@@ -53,6 +53,9 @@ jobs:
 
       - name: 同步部署文件（compose / caddy / initdb / scripts）
         run: |
+          # 先清空这几处再上传：scp 只覆盖不删除，仓库里删掉的文件会一直残留在服务器上
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
+            "rm -rf '$DEPLOY_ROOT/caddy' '$DEPLOY_ROOT/initdb' '$DEPLOY_ROOT/scripts' '$DEPLOY_ROOT/docker-compose.yml'"
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -r \
             deploy/docker-compose.yml deploy/caddy deploy/initdb deploy/scripts \
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_ROOT/"
@@ -64,12 +67,38 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
             "printf '%s' '$GHCR_TOKEN' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
 
-      - name: 拉取镜像并重建容器
+      - name: 服务器上部署（校验 Caddyfile → 拉镜像 → 重建容器 → 重载 Caddy）
         env:
           TAG: ${{ inputs.tag }}
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
-            "chmod +x $DEPLOY_ROOT/scripts/*.sh && TAG=$TAG $DEPLOY_ROOT/scripts/deploy.sh"
+            "DEPLOY_ROOT='$DEPLOY_ROOT' TAG='$TAG' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$DEPLOY_ROOT"
+
+          echo "==> 权限兜底：initdb 需容器内 postgres(999) 可读，Caddyfile 需 caddy 可读（.env 保持 600）"
+          chmod 755 scripts/*.sh initdb/*.sh 2>/dev/null || true
+          chmod 644 caddy/Caddyfile docker-compose.yml 2>/dev/null || true
+
+          echo "==> 校验 Caddyfile"
+          [ -f caddy.env ] || { echo "缺少 caddy.env：先跑 scripts/bootstrap.sh" >&2; exit 1; }
+          set -a; . ./caddy.env; set +a    # caddy validate 需要 DOMAIN / ACME_EMAIL
+
+          caddy validate --config caddy/Caddyfile
+
+          echo "==> 拉取镜像（TAG=$TAG）"
+          docker compose --env-file .env pull
+
+          echo "==> 重建容器"
+          docker compose --env-file .env up -d --remove-orphans
+
+          echo "==> 重载 Caddy"
+          sudo -n systemctl reload caddy \
+            || echo "警告：未能自动重载 Caddy（检查 /etc/sudoers.d/ai-game-deploy）" >&2
+
+          docker image prune -f
+          docker compose --env-file .env ps
+          REMOTE
 
       - name: 公网健康检查（HTTPS）
         run: |
