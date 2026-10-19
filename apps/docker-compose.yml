@@ -1,18 +1,19 @@
 name: ai-game-platform-dev
 
 services:
+  # 本地开发专用 PG（仅 apps/.env 的 PLATFORM_DATABASE_URL 使用它，账号口令写死保持一致）
   postgres:
     image: postgres:17.11
     ports:
       - "5434:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: aigame_platform
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aigame_platform"]
       interval: 5s
       timeout: 5s
       retries: 10
