@@ -10,7 +10,7 @@
 | `apps/agent/` | LangGraph Server + deepagents；只持沙盒访问权（E2B Key）与内部令牌 | Python 工程（uv） |
 | `apps/frontent-test-1/` | 平台前端 SPA（Vite + React）；**过渡用**，后续换正式前端工程（只换 `WEB_IMAGE`） | Node 工程（npm） |
 | `sandbox/` | 沙盒资产：`image/`（AGS 自定义镜像 Dockerfile + 启动脚本）、`game-template/`（游戏工程模板）、`assets/skills/`（Phaser 技能库） | 镜像/资产 |
-| `deploy/` | 服务器部署：`docker-compose.yml`、`caddy/Caddyfile`、`docker/*.Dockerfile`、`initdb/`、`scripts/` | 部署 |
+| `deploy/` | 服务器部署：`docker-compose.yml`、`caddy/Caddyfile`、`docker/*.Dockerfile`、`initdb/`、`scripts/`（**细则见 `deploy/AGENTS.md`**） | 部署 |
 | `.github/workflows/ci.yml` | CI：push 自动构建推送 GHCR（**不在 CI 里跑测试**，测试本地 `make test`） | CI |
 | `.github/workflows/cd.yml` | CD：**只能手动触发**（`gh workflow run cd.yml -f tag=<main\|sha-xxx>`）→ SSH 拉镜像重建 | CD |
 | `docs/` | 规格与讨论记录（`docs/db/` 为数据库说明） | 文档 |
@@ -23,12 +23,14 @@
 
 ## 生产/测试部署拓扑（`deploy/`）
 
+> 细节（容器/端口/卷、Caddy 路由、文件权限、脚本用法、排错）在 **`deploy/AGENTS.md`**；本节只列跨目录必须知道的事实。
+
 - 服务器 `43.129.212.75`（腾讯云**轻量**香港）；域名 `ai-game-platform.test.chatgqt.top`。
 - **HTTPS 已启用**（轻量防火墙已放行 443）：Caddy 自动申请/续期 Let's Encrypt 证书，80 端口自动 308 跳转到 https；
   `JWT_ISSUER`/`CORS_ORIGINS` 均为 `https://<域名>`。⚠️ 证书续期依赖 80/443 长期可从公网访问，
   若 443 被关掉，按 `deploy/caddy/Caddyfile` 顶部注释临时切回 HTTP。
-- **公网 HTTP 唯一入口 = 宿主机系统级 Caddy**（systemd，`/etc/caddy/Caddyfile` 软链到 `/srv/ai-game-platform/caddy/Caddyfile`）；容器全部在内网：
-  `web`/`api`/`agent` 只绑 `127.0.0.1:8081/8082/8083`，由 Caddy 按路径同源反代（`/api/*`→api、`/lg/*`→agent 去前缀、`/`→web）。
+- **公网唯一入口 = 宿主机系统级 Caddy**（systemd，配置软链自 `deploy/caddy/Caddyfile`）；容器全在内网：
+  `web`/`api`/`agent` 只绑 `127.0.0.1:8081/8082/8083`，Caddy 按路径同源反代（`/api/*`→api、`/lg/*`→agent 去前缀、`/`→web）。
 - 数据容器：`postgres-games`（**0.0.0.0:10050**，数据库协议直连不走 Caddy，`hostssl` 强制 TLS）、`postgres-platform`、`langgraph-pg`（pgvector）、`langgraph-redis`（均不发布端口）。
 - 配置源：服务器 `/srv/ai-game-platform/.env`（600，不进 git，样板见 `apps/.env.example`）。
 - 发布节奏：push 只跑 CI（构建 `sha-<commit>` + `main` 两个 tag），**不自动上生产**；部署手动 `gh workflow run cd.yml -f tag=main`，回滚 `-f tag=sha-<旧 commit>`（等价于服务器上 `TAG=<tag> scripts/deploy.sh`）。
