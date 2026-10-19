@@ -64,7 +64,7 @@ jobs:
           openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out .keys/jwt_private.pem
           openssl rsa -pubout -in .keys/jwt_private.pem -out .keys/jwt_public.pem
 
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.0
         with:
           python-version: "3.14"
           enable-cache: true
