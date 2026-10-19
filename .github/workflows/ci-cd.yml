@@ -157,6 +157,13 @@ jobs:
             deploy/docker-compose.yml deploy/caddy deploy/initdb deploy/scripts \
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_ROOT/"
 
+      - name: 在服务器登录 GHCR（用任务级临时凭据，服务器不留长期令牌）
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
+            "printf '%s' '$GHCR_TOKEN' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+
       - name: 拉取镜像并重建容器
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
