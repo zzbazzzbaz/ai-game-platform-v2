@@ -1,19 +1,27 @@
 # AI 游戏平台 · 系统级 Caddy 反代配置
 #
 # 部署位置（软链）：/etc/caddy/Caddyfile -> /srv/ai-game-platform/caddy/Caddyfile
-# 变量来源：/etc/systemd/system/caddy.service.d/override.conf 里的
-#           Environment=DOMAIN=... / Environment=ACME_EMAIL=...
+# 变量来源：systemd drop-in 的 EnvironmentFile=/srv/ai-game-platform/caddy.env
+#           （DOMAIN=... / ACME_EMAIL=...）
 #
 # 上游（容器只绑回环，公网无法直达）：
 #   127.0.0.1:8081  web   （nginx + 前端静态产物）
 #   127.0.0.1:8082  api   （FastAPI，路由自带 /api/v1 前缀）
 #   127.0.0.1:8083  agent （LangGraph Server / langgraph-api）
+#
+# ⚠️ 当前只监听 80（腾讯云轻量防火墙未放行 443）：不启用自动 HTTPS、不发 ACME 请求。
+#    等 443 放行后，改两处即可切回 HTTPS：
+#      1) 删掉下面的 auto_https off
+#      2) 把站点地址 http://{$DOMAIN} 改成 {$DOMAIN}
+#    同时把服务器 .env 的 JWT_ISSUER / CORS_ORIGINS 从 http:// 改成 https://
+#    （api 与 agent 共用同一份 .env，改完 restart 两个容器即可）
 
 {
 	email {$ACME_EMAIL}
+	auto_https off
 }
 
-{$DOMAIN} {
+http://{$DOMAIN} {
 	encode zstd gzip
 
 	# 平台后端：路径原样透传
@@ -21,8 +29,8 @@
 		reverse_proxy 127.0.0.1:8082
 	}
 
-	# JWKS（agent 走内网 127.0.0.1/8082 取，这里只保留具体路径给外部调试）
-	# ⚠️ 不要写成 /.well-known/*：那会把 ACME 的 http-01 挑战路径也代理走，导致签不出证书
+	# JWKS（agent 走内网 127.0.0.1:8082 取，这里只保留具体路径给外部调试）
+	# ⚠️ 不要写成 /.well-known/*：那会把 ACME 的 http-01 挑战路径也代理走
 	handle /.well-known/jwks.json {
 		reverse_proxy 127.0.0.1:8082
 	}
@@ -51,7 +59,7 @@
 	}
 
 	header {
-		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		# 未启用 TLS，不能发 HSTS（会把自己锁死）
 		-Server
 	}
 
