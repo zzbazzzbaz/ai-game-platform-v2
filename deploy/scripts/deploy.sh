@@ -25,8 +25,12 @@ if [ -f caddy/Caddyfile ]; then
 	caddy validate --config caddy/Caddyfile
 fi
 
-# 兜底修复权限位：容器内的 postgres 需要可读可执行（CI/scp 传输可能丢位）
+# 兜底修复权限位：
+#  - initdb/*.sh 需容器内 postgres(999) 可读可执行
+#  - Caddyfile 需 caddy(999) 用户可读（systemd 以 caddy 身份 reload）
+# 注意：.env 必须保持 600，绝不能放开
 chmod 755 scripts/*.sh initdb/*.sh 2>/dev/null || true
+chmod 644 caddy/Caddyfile docker-compose.yml 2>/dev/null || true
 
 echo "==> 拉取镜像（TAG=$TAG）"
 docker compose --env-file .env pull

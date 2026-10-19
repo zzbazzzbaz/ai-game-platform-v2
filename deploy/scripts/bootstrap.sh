@@ -108,6 +108,37 @@ systemctl daemon-reload
 systemctl enable --now caddy
 systemctl reload caddy || systemctl restart caddy
 
+log "附加：每日备份 systemd timer（04:00，不依赖 crontab）"
+cat >/etc/systemd/system/ai-game-backup.service <<EOF
+[Unit]
+Description=AI 游戏平台 · 每日数据库备份（pg_dump + 上传 COS）
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=$DEPLOY_USER
+WorkingDirectory=$ROOT
+ExecStart=$ROOT/scripts/backup.sh
+StandardOutput=append:$ROOT/backups/backup.log
+StandardError=append:$ROOT/backups/backup.log
+EOF
+cat >/etc/systemd/system/ai-game-backup.timer <<'EOF'
+[Unit]
+Description=AI 游戏平台 · 每日 04:00 触发备份
+
+[Timer]
+OnCalendar=*-*-* 04:00:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
+EOF
+systemctl daemon-reload
+systemctl enable --now ai-game-backup.timer
+systemctl list-timers ai-game-backup.timer --no-pager | head -3
+
 log "完成"
 cat <<EOF
 
@@ -115,10 +146,9 @@ cat <<EOF
 Caddy 配置    : /etc/caddy/Caddyfile → $ROOT/caddy/Caddyfile
 Caddy 变量    : $ROOT/caddy.env（DOMAIN=$DOMAIN，ACME_EMAIL=$ACME_EMAIL）
 日志          : /var/log/caddy/access.log（journalctl -u caddy 看进程日志）
+每日备份      : systemd timer ai-game-backup.timer（04:00，日志 $ROOT/backups/backup.log）
 
 后续（CI 或手工）：
   1. 把 deploy/.env 放到 $ROOT/.env（chmod 600）—— 由 ops 维护，不进 git
   2. TAG=sha-xxxx $ROOT/scripts/deploy.sh
-  3. 定时备份：crontab -e 增加
-     0 4 * * * $ROOT/scripts/backup.sh >> $ROOT/backups/backup.log 2>&1
 EOF

@@ -21,8 +21,9 @@
 		reverse_proxy 127.0.0.1:8082
 	}
 
-	# JWKS（agent 走内网取，这里保留给外部/调试）
-	handle /.well-known/* {
+	# JWKS（agent 走内网 127.0.0.1/8082 取，这里只保留具体路径给外部调试）
+	# ⚠️ 不要写成 /.well-known/*：那会把 ACME 的 http-01 挑战路径也代理走，导致签不出证书
+	handle /.well-known/jwks.json {
 		reverse_proxy 127.0.0.1:8082
 	}
 

@@ -33,7 +33,8 @@ if [ -n "${COS_BUCKET:-}" ] && [ -n "${COS_SECRET_ID:-}" ]; then
 	echo "==> 上传 COS: bucket=$COS_BUCKET"
 	for f in "$PLATFORM_DUMP" "$GAMES_DUMP"; do
 		# 借用 api 镜像里的 cos-python-sdk-v5；备份目录只读挂进容器
-		docker run --rm --env-file ./.env -v "$PWD/backups:/backups:ro" \
+		# 注意 -i：python 从 stdin 读脚本，不挂 stdin 会静默什么都不做
+		docker run --rm -i --env-file ./.env -v "$PWD/backups:/backups:ro" \
 			--entrypoint python "${API_IMAGE}:${TAG:-main}" - "$(basename "$f")" <<'PY'
 import os
 import sys
