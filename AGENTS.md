@@ -11,7 +11,8 @@
 | `apps/frontent-test-1/` | 平台前端 SPA（Vite + React）；**过渡用**，后续换正式前端工程（只换 `WEB_IMAGE`） | Node 工程（npm） |
 | `sandbox/` | 沙盒资产：`image/`（AGS 自定义镜像 Dockerfile + 启动脚本）、`game-template/`（游戏工程模板）、`assets/skills/`（Phaser 技能库） | 镜像/资产 |
 | `deploy/` | 服务器部署：`docker-compose.yml`、`caddy/Caddyfile`、`docker/*.Dockerfile`、`initdb/`、`scripts/` | 部署 |
-| `.github/workflows/ci-cd.yml` | CI/CD：测试 → 构建推送 GHCR → SSH 部署 | CI |
+| `.github/workflows/ci.yml` | CI：push 自动跑测试 → 构建推送 GHCR | CI |
+| `.github/workflows/cd.yml` | CD：**只能手动触发**（`gh workflow run cd.yml -f tag=<main\|sha-xxx>`）→ SSH 拉镜像重建 | CD |
 | `docs/` | 规格与讨论记录（`docs/db/` 为数据库说明） | 文档 |
 
 ## 开发环境拓扑（本阶段）
@@ -28,7 +29,8 @@
 - **公网 HTTP 唯一入口 = 宿主机系统级 Caddy**（systemd，`/etc/caddy/Caddyfile` 软链到 `/srv/ai-game-platform/caddy/Caddyfile`）；容器全部在内网：
   `web`/`api`/`agent` 只绑 `127.0.0.1:8081/8082/8083`，由 Caddy 按路径同源反代（`/api/*`→api、`/lg/*`→agent 去前缀、`/`→web）。
 - 数据容器：`postgres-games`（**0.0.0.0:10050**，数据库协议直连不走 Caddy，`hostssl` 强制 TLS）、`postgres-platform`、`langgraph-pg`（pgvector）、`langgraph-redis`（均不发布端口）。
-- 配置源：服务器 `/srv/ai-game-platform/.env`（600，不进 git，样板见 `apps/.env.example`）；CI 只传 `TAG=sha-<commit>`，回滚就是拿旧 tag 再跑一次 `scripts/deploy.sh`。
+- 配置源：服务器 `/srv/ai-game-platform/.env`（600，不进 git，样板见 `apps/.env.example`）。
+- 发布节奏：push 只跑 CI（构建 `sha-<commit>` + `main` 两个 tag），**不自动上生产**；部署手动 `gh workflow run cd.yml -f tag=main`，回滚 `-f tag=sha-<旧 commit>`（等价于服务器上 `TAG=<tag> scripts/deploy.sh`）。
 - 镜像：GHCR `ghcr.io/zzbazzzbaz/ai-game-platform-v2/{api,agent,web}`（public）。
 - ⚠️ `GAME_DB_SSLMODE` **必须 `no-verify`**：沙盒内 node `pg` 的 `pg-connection-string@2.14` 把 `sslmode=require` 当作 `verify-full`，自签证书下会连不上。
 
@@ -52,7 +54,7 @@
 ## 规则
 
 - 配置全读环境变量，禁写死，无默认值，缺失 fail-fast；本地唯一配置源为 `apps/.env`（不提交）。
-- **唯一配置样板为 `apps/.env.example`**（全部变量清单；服务器部署照抄后按文件头的「服务器需改 12 项」改值）。
+- **唯一配置样板为 `apps/.env.example`**（全部变量清单；服务器部署照抄后按文件头的「服务器需改 16 项」改值）。
 - Python：`apps/api`、`apps/agent` 各自独立 `uv` + `uv.lock`；`.python-version` 均为 `3.14.4`，`requires-python >=3.14,<3.15` 保持一致；不使用 uv workspace。
 - Node：`sandbox/game-template` 使用 npm，`package-lock.json` 必须提交。
 - 同步模式：api 路由用 `def` + 同步 `Session`，不引入 async SQLAlchemy。

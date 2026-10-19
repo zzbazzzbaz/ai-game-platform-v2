@@ -1,11 +1,10 @@
-# CI/CD：PR 只跑测试；push main → 构建三镜像推 GHCR → SSH 到服务器拉取重建
-# 回滚：TAG=sha-<上一个 commit> 执行服务器上的 scripts/deploy.sh
-name: ci-cd
+# CI：push 自动跑「测试 → 构建三镜像推 GHCR」；部署是独立的手动流程（cd.yml）
+# 镜像 tag：sha-<commit>（回滚用）+ main（main 分支最新一次构建）
+name: ci
 
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   pull_request:
   workflow_dispatch:
 
@@ -14,15 +13,11 @@ permissions:
   packages: write
 
 concurrency:
-  group: ci-cd-${{ github.ref }}
-  cancel-in-progress: false
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   IMAGE_PREFIX: ghcr.io/${{ github.repository }}
-  SITE_DOMAIN: ai-game-platform.test.chatgqt.top
-  DEPLOY_HOST: 43.129.212.75
-  DEPLOY_USER: guoqitong
-  DEPLOY_ROOT: /srv/ai-game-platform
 
 jobs:
   test:
@@ -89,7 +84,7 @@ jobs:
   build:
     name: 构建镜像 ${{ matrix.app }}
     needs: [test]
-    if: github.event_name == 'push'
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -123,49 +118,3 @@ jobs:
             ${{ env.IMAGE_PREFIX }}/${{ matrix.app }}:main
           cache-from: type=gha,scope=${{ matrix.app }}
           cache-to: type=gha,scope=${{ matrix.app }},mode=max
-
-  deploy:
-    name: 部署（SSH 拉镜像重建容器）
-    needs: [build]
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: 安装部署私钥
-        env:
-          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-        run: |
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-
-      - name: 同步部署文件（compose / caddy / initdb / scripts）
-        run: |
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -r \
-            deploy/docker-compose.yml deploy/caddy deploy/initdb deploy/scripts \
-            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_ROOT/"
-
-      - name: 在服务器登录 GHCR（用任务级临时凭据，服务器不留长期令牌）
-        env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
-            "printf '%s' '$GHCR_TOKEN' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
-
-      - name: 拉取镜像并重建容器
-        run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
-            "chmod +x $DEPLOY_ROOT/scripts/*.sh && TAG=sha-${GITHUB_SHA} $DEPLOY_ROOT/scripts/deploy.sh"
-
-      - name: 公网健康检查
-        run: |
-          # 走 HTTP 因轻量防火墙未放行 443；必须带超时，否则端口被丢弃时会挂死
-          for i in $(seq 1 24); do
-            code=$(curl -s -o /dev/null -m 8 --connect-timeout 5 -w '%{http_code}' "http://$SITE_DOMAIN/health" || true)
-            echo "第 $i 次探测：HTTP $code"
-            [ "$code" = "200" ] && break
-            sleep 5
-          done
-          curl -fsS -m 15 "http://$SITE_DOMAIN/health"

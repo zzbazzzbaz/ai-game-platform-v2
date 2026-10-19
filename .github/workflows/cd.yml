@@ -1,0 +1,83 @@
+# CD：只能手动触发（gh workflow run cd.yml -f tag=main），push 不自动上生产
+# tag 取 CI 推过的镜像：main = main 分支最新构建；sha-<commit> = 任意历史构建（回滚）
+#   回滚示例：gh workflow run cd.yml -f tag=sha-<上一个 commit 的 40 位 sha>
+name: cd
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "要部署的镜像 tag（main 或 sha-<40 位 commit>）"
+        required: true
+        default: main
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: cd
+  cancel-in-progress: false
+
+env:
+  SITE_DOMAIN: ai-game-platform.test.chatgqt.top
+  DEPLOY_HOST: 43.129.212.75
+  DEPLOY_USER: guoqitong
+  DEPLOY_ROOT: /srv/ai-game-platform
+
+jobs:
+  deploy:
+    name: 部署（SSH 拉镜像重建容器）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: 校验 tag
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          if ! printf '%s' "$TAG" | grep -Eq '^(main|sha-[0-9a-f]{40})$'; then
+            echo "tag 只能是 main 或 sha-<40 位 commit>，收到：$TAG"
+            exit 1
+          fi
+
+      - name: 安装部署私钥
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: 同步部署文件（compose / caddy / initdb / scripts）
+        run: |
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -r \
+            deploy/docker-compose.yml deploy/caddy deploy/initdb deploy/scripts \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_ROOT/"
+
+      - name: 在服务器登录 GHCR（用任务级临时凭据，服务器不留长期令牌）
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
+            "printf '%s' '$GHCR_TOKEN' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+
+      - name: 拉取镜像并重建容器
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
+            "chmod +x $DEPLOY_ROOT/scripts/*.sh && TAG=$TAG $DEPLOY_ROOT/scripts/deploy.sh"
+
+      - name: 公网健康检查
+        run: |
+          # 走 HTTP 因轻量防火墙未放行 443；必须带超时，否则端口被丢弃时会挂死
+          for i in $(seq 1 24); do
+            code=$(curl -s -o /dev/null -m 8 --connect-timeout 5 -w '%{http_code}' "http://$SITE_DOMAIN/health" || true)
+            echo "第 $i 次探测：HTTP $code"
+            [ "$code" = "200" ] && break
+            sleep 5
+          done
+          curl -fsS -m 15 "http://$SITE_DOMAIN/health"
