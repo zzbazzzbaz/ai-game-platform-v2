@@ -1,0 +1,63 @@
+# AI 游戏平台 · 系统级 Caddy 反代配置
+#
+# 部署位置（软链）：/etc/caddy/Caddyfile -> /srv/ai-game-platform/caddy/Caddyfile
+# 变量来源：/etc/systemd/system/caddy.service.d/override.conf 里的
+#           Environment=DOMAIN=... / Environment=ACME_EMAIL=...
+#
+# 上游（容器只绑回环，公网无法直达）：
+#   127.0.0.1:8081  web   （nginx + 前端静态产物）
+#   127.0.0.1:8082  api   （FastAPI，路由自带 /api/v1 前缀）
+#   127.0.0.1:8083  agent （LangGraph Server / langgraph-api）
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# 平台后端：路径原样透传
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8082
+	}
+
+	# JWKS（agent 走内网取，这里保留给外部/调试）
+	handle /.well-known/* {
+		reverse_proxy 127.0.0.1:8082
+	}
+
+	# 健康检查（CI 部署后用）
+	handle /health {
+		reverse_proxy 127.0.0.1:8082
+	}
+
+	# LangGraph Server：去掉 /lg 前缀（与 Vite dev 的 rewrite 一致）
+	# 长轮次（曾出现单轮 > 20 分钟）→ 关缓冲、放大超时，避免 SSE 被截断
+	handle_path /lg* {
+		reverse_proxy 127.0.0.1:8083 {
+			flush_interval -1
+			transport http {
+				dial_timeout 10s
+				response_header_timeout 300s
+				read_timeout 0
+			}
+		}
+	}
+
+	# 前端 SPA（nginx 内做 try_files 兜底）
+	handle {
+		reverse_proxy 127.0.0.1:8081
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}

@@ -1,0 +1,173 @@
+# AI 游戏平台 · CI/CD
+#
+# pull_request：只跑测试
+# push main   ：测试 → 构建并推送三个镜像到 GHCR → SSH 到服务器拉取镜像重建容器
+# 手动        ：workflow_dispatch
+#
+# 回滚：把服务器上的 TAG 换成上一个 sha-<commit> 再执行 scripts/deploy.sh（见 deploy/scripts/deploy.sh）
+name: ci-cd
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # GHCR 镜像前缀（三个镜像：api / agent / web）
+  IMAGE_PREFIX: ghcr.io/${{ github.repository }}
+  # 公网域名（健康检查用）
+  SITE_DOMAIN: ai-game-platform.test.chatgqt.top
+  DEPLOY_HOST: 43.129.212.75
+  DEPLOY_USER: guoqitong
+  DEPLOY_ROOT: /srv/ai-game-platform
+
+jobs:
+  # ------------------------------------------------------------ 测试 ----
+  test:
+    name: 测试（api + 前端）
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.11
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aigame_platform
+        ports: ["5434:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: 准备测试配置 apps/.env（源自 .env.example）
+        run: |
+          cp apps/.env.example apps/.env
+          sed -i 's#^PLATFORM_DATABASE_URL=.*#PLATFORM_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5434/aigame_platform?sslmode=disable#' apps/.env
+
+      - name: 生成 JWT 测试密钥
+        working-directory: apps/api
+        run: |
+          mkdir -p .keys
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out .keys/jwt_private.pem
+          openssl rsa -pubout -in .keys/jwt_private.pem -out .keys/jwt_public.pem
+
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.14"
+          enable-cache: true
+          cache-dependency-glob: apps/api/uv.lock
+
+      - name: api 静态检查 + 用例
+        working-directory: apps/api
+        run: |
+          uv sync --frozen
+          uv run ruff check .
+          uv run pytest -q
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/frontent-test-1/package-lock.json
+
+      - name: 前端 lint + 构建
+        working-directory: apps/frontent-test-1
+        env:
+          VITE_API_BASE_URL: /api/v1
+          VITE_LG_BASE_URL: /lg
+          VITE_LG_ASSISTANT_ID: game
+        run: |
+          npm ci
+          npm run lint
+          npm run build
+
+  # ------------------------------------------------------------ 构建 ----
+  build:
+    name: 构建镜像 ${{ matrix.app }}
+    needs: [test]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: api
+            context: apps/api
+          - app: agent
+            context: apps/agent
+          - app: web
+            context: apps/frontent-test-1
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: deploy/docker/${{ matrix.app }}.Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/${{ matrix.app }}:sha-${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}/${{ matrix.app }}:main
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,scope=${{ matrix.app }},mode=max
+
+  # ------------------------------------------------------------ 部署 ----
+  deploy:
+    name: 部署（SSH 拉镜像重建容器）
+    needs: [build]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: 安装部署私钥
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: 同步部署文件（compose / caddy / initdb / scripts）
+        run: |
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -r \
+            deploy/docker-compose.yml deploy/caddy deploy/initdb deploy/scripts \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_ROOT/"
+
+      - name: 拉取镜像并重建容器
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
+            "chmod +x $DEPLOY_ROOT/scripts/*.sh && TAG=sha-${GITHUB_SHA} $DEPLOY_ROOT/scripts/deploy.sh"
+
+      - name: 公网健康检查
+        run: |
+          for i in $(seq 1 24); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "https://$SITE_DOMAIN/health" || true)
+            echo "第 $i 次探测：HTTP $code"
+            [ "$code" = "200" ] && break
+            sleep 5
+          done
+          curl -fsS "https://$SITE_DOMAIN/health"

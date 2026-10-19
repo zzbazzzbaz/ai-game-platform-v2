@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.errors import register_error_handlers
+from app.api.v1.endpoints.health import router as health_router
 from app.api.v1.endpoints.wellknown import router as wellknown_router
 from app.api.v1.router import api_router
 from app.core.config import Settings, get_settings
@@ -26,6 +27,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     register_error_handlers(application)
     application.include_router(api_router, prefix="/api/v1")
     application.include_router(wellknown_router)
+    application.include_router(health_router)
     return application
 
 
