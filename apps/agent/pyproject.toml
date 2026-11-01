@@ -13,8 +13,8 @@ dependencies = [
     "langsmith==0.12.4",
     "pydantic-settings==2.15.0",
     "httpx==0.28.1",
-    "e2b~=2.52.0",
-    "pyjwt[crypto]>=2.10.1",
+    "e2b==2.52.1",
+    "pyjwt[crypto]==2.15.1",
 ]
 
 [tool.setuptools.packages.find]

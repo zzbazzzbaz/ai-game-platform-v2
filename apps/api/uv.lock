@@ -38,22 +38,22 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bcrypt", specifier = ">=4.2.1" },
-    { name = "cos-python-sdk-v5", specifier = ">=1.9.30" },
-    { name = "e2b", specifier = "~=2.52.0" },
-    { name = "fastapi", extras = ["standard"], specifier = ">=0.115" },
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "psycopg", extras = ["binary"], specifier = ">=3.2.3" },
-    { name = "pydantic-settings", specifier = ">=2.6.1" },
-    { name = "pyjwt", extras = ["crypto"], specifier = ">=2.10.1" },
-    { name = "sqlalchemy", specifier = ">=2.0.36" },
-    { name = "tencentcloud-sdk-python-tcb", specifier = ">=3.0.1300" },
-    { name = "tencentcloud-sdk-python-tcbr", specifier = ">=3.0.1300" },
+    { name = "bcrypt", specifier = "==5.0.0" },
+    { name = "cos-python-sdk-v5", specifier = "==1.9.44" },
+    { name = "e2b", specifier = "==2.52.1" },
+    { name = "fastapi", extras = ["standard"], specifier = "==0.143.0" },
+    { name = "httpx", specifier = "==0.28.1" },
+    { name = "psycopg", extras = ["binary"], specifier = "==3.3.6" },
+    { name = "pydantic-settings", specifier = "==2.15.0" },
+    { name = "pyjwt", extras = ["crypto"], specifier = "==2.15.1" },
+    { name = "sqlalchemy", specifier = "==2.1.4" },
+    { name = "tencentcloud-sdk-python-tcb", specifier = "==3.1.183" },
+    { name = "tencentcloud-sdk-python-tcbr", specifier = "==3.1.155" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "pytest", specifier = ">=9.1.1" },
+    { name = "pytest", specifier = "==9.1.1" },
     { name = "ruff", specifier = "==0.16.10" },
     { name = "ty", specifier = "==0.0.84" },
 ]

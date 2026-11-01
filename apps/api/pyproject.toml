@@ -4,17 +4,17 @@ version = "0.1.0"
 description = "AI 游戏平台后端（认证 / 沙盒编排 / 数据库开通 / 发布 / 预览）"
 requires-python = ">=3.14,<3.15"
 dependencies = [
-    "fastapi[standard]>=0.115",
-    "sqlalchemy>=2.0.36",
-    "psycopg[binary]>=3.2.3",
-    "pydantic-settings>=2.6.1",
-    "pyjwt[crypto]>=2.10.1",
-    "bcrypt>=4.2.1",
-    "e2b~=2.52.0",
-    "cos-python-sdk-v5>=1.9.30",
-    "tencentcloud-sdk-python-tcb>=3.0.1300",
-    "tencentcloud-sdk-python-tcbr>=3.0.1300",
-    "httpx>=0.28.1",
+    "fastapi[standard]==0.143.0",
+    "sqlalchemy==2.1.4",
+    "psycopg[binary]==3.3.6",
+    "pydantic-settings==2.15.0",
+    "pyjwt[crypto]==2.15.1",
+    "bcrypt==5.0.0",
+    "e2b==2.52.1",
+    "cos-python-sdk-v5==1.9.44",
+    "tencentcloud-sdk-python-tcb==3.1.183",
+    "tencentcloud-sdk-python-tcbr==3.1.155",
+    "httpx==0.28.1",
 ]
 
 [tool.setuptools.packages.find]
@@ -43,7 +43,7 @@ filterwarnings = ["ignore::starlette.exceptions.StarletteDeprecationWarning"]
 
 [dependency-groups]
 dev = [
-    "pytest>=9.1.1",
+    "pytest==9.1.1",
     "ruff==0.16.10",
     "ty==0.0.84",
 ]
