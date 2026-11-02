@@ -48,7 +48,7 @@ agr tool create -n ai-game-platform-sandbox -t custom \
       {"Name": "novnc", "Port": 9000, "Protocol": "TCP"},
       {"Name": "envd", "Port": 49983, "Protocol": "TCP"}
     ],
-    "Resources": {"CPU": "2000m", "Memory": "4Gi", "Storage": "10Gi"},
+    "Resources": {"CPU": "1000m", "Memory": "2Gi", "Storage": "10Gi"},
     "Probe": {
       "HttpGet": {"Path": "/health", "Port": 49983, "Scheme": "HTTP"},
       "ReadyTimeoutMs": 30000, "ProbeTimeoutMs": 3000, "ProbePeriodMs": 3000,
@@ -60,7 +60,19 @@ agr tool create -n ai-game-platform-sandbox -t custom \
 
 - 工具角色需具备 **`QcloudAccessForAgsTcrRead`**（拉取 CCR 镜像）+ `QcloudAccessForAgsCosReadWrite`（COS 挂载）——缺前者时工具会 `AuthFailure.Registry: tcr:DescribeImagePersonal` 失败；
 - 实例级素材挂载（`x-mounts` 子路径）仍由 api `AgsGateway.ensure` 传入，custom 工具同样支持；
-- 规格按需调整：`Resources.CPU/Memory`（如 `4000m`/`8Gi`）、`Storage`（1/5/10/20GiB，默认 1GiB 不够用）。
+- 规格按需调整：`Resources.CPU/Memory`、`Storage`（1/5/10/20GiB，默认 1GiB 不够用）。
+  AGS 只允许 **CPU:Memory = 1:1 / 1:2 / 2:1**（CPU 档位 0.5/1/2/4/8/16/32 核，内存 1Gi 步进）：
+  0.5 核只能配 1Gi、1 核只能配 1–2Gi、2 核可配 1/2/4Gi……`0.5C4G`、`1C4G` 都会被 AGS 拒绝
+  （`InvalidParameterValue.ResourceSpecification`）；
+- **当前规格为 1C2G（`1000m` / `2Gi` / `10Gi`）**，2026-11-01 由 2C4G 下调（成本）；
+- 规格可**原地更新**（只影响之后新建的实例，不用改代码/`.env`）：
+  ```bash
+  agr tool get sdt-3yg7vydi -o json > before.json   # 备份
+  # 取 .Data.CustomConfiguration，删掉只读的 ImageDigest，只改 Resources，再回写
+  jq '.Data.CustomConfiguration | del(.ImageDigest) | .Resources = {"CPU":"1000m","Memory":"2Gi","Storage":"10Gi"}' \
+    before.json > custom.json
+  agr tool update sdt-3yg7vydi --custom-configuration @custom.json --wait
+  ```
 
 ## 本地冒烟（可选）
 
