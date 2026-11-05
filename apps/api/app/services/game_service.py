@@ -4,7 +4,7 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import ForbiddenError, NotFoundError
+from app.core.exceptions import ForbiddenError, NotFoundError, ValidationError
 from app.gateways.cos import CosGateway
 from app.gateways.pg_admin import PgAdminGateway
 from app.models.game import Game
@@ -65,6 +65,27 @@ def create_thread(
 ) -> GameThread:
     get_owned_game(owner_id=owner_id, game_id=game_id, session=session)
     return thread_repository.create(session, game_id=game_id, title=title.strip())
+
+
+def rename_thread(
+    *,
+    owner_id: uuid.UUID,
+    game_id: uuid.UUID,
+    thread_id: uuid.UUID,
+    title: str,
+    session: Session,
+) -> GameThread:
+    thread = get_owned_thread(owner_id=owner_id, thread_id=thread_id, session=session)
+    if thread.game_id != game_id:
+        # 路径里的 game 与会话归属对不上：按不存在处理，不泄露他人会话的存在性
+        raise NotFoundError("会话不存在")
+    cleaned = title.strip()
+    if not cleaned:
+        raise ValidationError("标题不能为空")
+    renamed = thread_repository.rename(session, thread_id=thread.thread_id, title=cleaned)
+    if renamed is None:  # 并发删除的极端竞态
+        raise NotFoundError("会话不存在")
+    return renamed
 
 
 def list_versions(

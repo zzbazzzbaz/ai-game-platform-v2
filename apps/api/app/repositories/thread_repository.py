@@ -26,5 +26,14 @@ class ThreadRepository:
     def get(self, session: Session, thread_id: uuid.UUID) -> GameThread | None:
         return session.get(GameThread, thread_id)
 
+    def rename(self, session: Session, *, thread_id: uuid.UUID, title: str) -> GameThread | None:
+        thread = session.get(GameThread, thread_id)
+        if thread is None:
+            return None
+        thread.title = title
+        session.commit()
+        session.refresh(thread)
+        return thread
+
 
 thread_repository = ThreadRepository()

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CreateGameBody(BaseModel):
@@ -22,6 +22,12 @@ class GameResponse(BaseModel):
 
 class CreateThreadBody(BaseModel):
     title: str = ""
+
+
+class RenameThreadBody(BaseModel):
+    """会话重命名：与参考前端新建框保持一致，最长 64 字。"""
+
+    title: str = Field(min_length=1, max_length=64)
 
 
 class ThreadResponse(BaseModel):

@@ -7,6 +7,7 @@ from app.api.schemas.games import (
     CreateGameBody,
     CreateThreadBody,
     GameResponse,
+    RenameThreadBody,
     ThreadResponse,
     VersionResponse,
 )
@@ -52,6 +53,23 @@ def create_thread(
 ) -> GameThread:
     return game_service.create_thread(
         owner_id=user_id, game_id=game_id, title=body.title, session=session
+    )
+
+
+@router.patch("/{game_id}/threads/{thread_id}", response_model=ThreadResponse)
+def rename_thread(
+    game_id: uuid.UUID,
+    thread_id: uuid.UUID,
+    body: RenameThreadBody,
+    session: SessionDep,
+    user_id: UserIdDep,
+) -> GameThread:
+    return game_service.rename_thread(
+        owner_id=user_id,
+        game_id=game_id,
+        thread_id=thread_id,
+        title=body.title,
+        session=session,
     )
 
 
