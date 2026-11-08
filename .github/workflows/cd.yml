@@ -86,6 +86,12 @@ jobs:
 
           caddy validate --config caddy/Caddyfile
 
+          echo "==> 补齐资源上传配置（幂等；缺失会导致 api 启动失败）"
+          grep -q '^ASSET_MAX_UPLOAD_BYTES=' .env \
+            || echo 'ASSET_MAX_UPLOAD_BYTES=52428800' >> .env
+          grep -q '^ASSET_PRESIGN_EXPIRES_SECONDS=' .env \
+            || echo 'ASSET_PRESIGN_EXPIRES_SECONDS=600' >> .env
+
           echo "==> 拉取镜像（TAG=$TAG）"
           docker compose --env-file .env pull
 

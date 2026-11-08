@@ -156,7 +156,12 @@ export function WorkbenchPage() {
 
           {threadId !== null ? (
             threadReadyQuery.isSuccess ? (
-              <ChatPanel key={threadId} threadId={threadId} suggestions={SUGGESTIONS} />
+              <ChatPanel
+                key={threadId}
+                gameId={gameId}
+                threadId={threadId}
+                suggestions={SUGGESTIONS}
+              />
             ) : threadReadyQuery.isError ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
                 <p className="text-destructive text-sm">

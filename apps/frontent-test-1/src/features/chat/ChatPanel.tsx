@@ -1,8 +1,9 @@
 import * as React from "react";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import type { Message } from "@langchain/langgraph-sdk";
-import { ArrowUp, CircleAlert, LoaderCircle, Square } from "lucide-react";
+import { ArrowUp, CircleAlert, LoaderCircle, Paperclip, Square, X } from "lucide-react";
 
+import { uploadAsset, type AssetResponse } from "@/api/assets";
 import { ensureFreshToken } from "@/api/client";
 import { createLangGraphClient } from "@/api/langgraph";
 import { Button } from "@/components/ui/button";
@@ -48,15 +49,53 @@ function errorText(error: unknown): string {
   return "生成失败，请重试";
 }
 
+function assetViewHint(contentType: string, path: string): string {
+  const quoted = `'${path}'`;
+  if (contentType.startsWith("text/")) {
+    return `cat ${quoted}`;
+  }
+  if (contentType === "application/json") {
+    return `cat ${quoted}`;
+  }
+  if (contentType.startsWith("image/")) {
+    return `ls -l ${quoted}（图片请作为素材引用，不要 cat）`;
+  }
+  if (contentType.startsWith("audio/") || contentType.startsWith("video/")) {
+    return `ls -l ${quoted}（不要 cat）`;
+  }
+  return `file ${quoted}（不要 cat）`;
+}
+
+function assetRecord(asset: AssetResponse): string {
+  return [
+    `- 文件名：${asset.filename}`,
+    `- 沙盒路径：${asset.sandbox_path}`,
+    `- 类型：${asset.content_type}，大小：${asset.size} 字节`,
+    "- 该目录为只读；如需修改，请先复制到 /workspace/work/ 后再改。",
+    `- 查看方式：${assetViewHint(asset.content_type, asset.sandbox_path)}`,
+  ].join("\n");
+}
+
+function composeMessage(text: string, assets: AssetResponse[]): string {
+  if (assets.length === 0) return text;
+  return `${text}\n\n【附件记录】\n${assets.map(assetRecord).join("\n")}`;
+}
+
 export function ChatPanel({
+  gameId,
   threadId,
   suggestions,
 }: {
+  gameId: string;
   threadId: string;
   suggestions: string[];
 }) {
   const [input, setInput] = React.useState("");
   const [lastSubmitted, setLastSubmitted] = React.useState<string | null>(null);
+  const [pendingAssets, setPendingAssets] = React.useState<AssetResponse[]>([]);
+  const [uploadingCount, setUploadingCount] = React.useState(0);
+  const [uploadError, setUploadError] = React.useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const client = React.useMemo(() => createLangGraphClient(), []);
 
@@ -90,18 +129,41 @@ export function ChatPanel({
     }
   }, [messages.length, isLoading]);
 
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadError(null);
+    const selected = Array.from(files);
+    setUploadingCount((count) => count + selected.length);
+    for (const file of selected) {
+      try {
+        const asset = await uploadAsset(gameId, file);
+        setPendingAssets((current) => [...current, asset]);
+      } catch (error) {
+        setUploadError(errorText(error));
+      } finally {
+        setUploadingCount((count) => Math.max(0, count - 1));
+      }
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeAsset = (assetId: string) => {
+    setPendingAssets((current) => current.filter((asset) => asset.asset_id !== assetId));
+  };
+
   const submit = (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed || isLoading) return;
+    if ((!trimmed && pendingAssets.length === 0) || isLoading || uploadingCount > 0) return;
 
     // 长时间停留后 access_token 可能已过期：提交前先确保续期
     void ensureFreshToken();
 
+    const content = composeMessage(trimmed || "请查看我上传的附件。", pendingAssets);
     const toolResponses = ensureToolCallsHaveResponses(messages);
     const humanMessage = {
       id: crypto.randomUUID(),
       type: "human",
-      content: trimmed,
+      content,
     };
 
     stream.submit(
@@ -120,8 +182,10 @@ export function ChatPanel({
         }),
       },
     );
-    setLastSubmitted(trimmed);
+    setLastSubmitted(content);
     setInput("");
+    setPendingAssets([]);
+    setUploadError(null);
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -207,7 +271,55 @@ export function ChatPanel({
       </div>
 
       <div className="border-t p-3">
+        {(pendingAssets.length > 0 || uploadingCount > 0 || uploadError !== null) && (
+          <div className="mx-auto mb-2 flex max-w-3xl flex-wrap items-center gap-2">
+            {pendingAssets.map((asset) => (
+              <span
+                key={asset.asset_id}
+                className="bg-muted flex items-center gap-1 rounded-full px-2 py-1 text-xs"
+              >
+                <Paperclip className="size-3 shrink-0" />
+                <span className="max-w-48 truncate">{asset.filename}</span>
+                <button
+                  type="button"
+                  aria-label={`移除 ${asset.filename}`}
+                  onClick={() => removeAsset(asset.asset_id)}
+                  className="hover:text-destructive"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            ))}
+            {uploadingCount > 0 && (
+              <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                <LoaderCircle className="size-3 animate-spin" />
+                正在上传…
+              </span>
+            )}
+            {uploadError !== null && (
+              <span className="text-destructive text-xs">{uploadError}</span>
+            )}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="mx-auto flex max-w-3xl items-end gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(event) => void handleFiles(event.target.files)}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="上传附件"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoading || uploadingCount > 0}
+          >
+            <Paperclip />
+          </Button>
           <Textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
@@ -228,7 +340,14 @@ export function ChatPanel({
               <Square />
             </Button>
           ) : (
-            <Button type="submit" size="icon" aria-label="发送" disabled={input.trim().length === 0}>
+            <Button
+              type="submit"
+              size="icon"
+              aria-label="发送"
+              disabled={
+                (input.trim().length === 0 && pendingAssets.length === 0) || uploadingCount > 0
+              }
+            >
               <ArrowUp />
             </Button>
           )}

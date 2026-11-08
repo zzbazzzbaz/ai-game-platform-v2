@@ -9,7 +9,7 @@ import itertools
 import time
 import uuid
 from dataclasses import dataclass
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -92,13 +92,57 @@ class FakeSandbox:
 
 
 class FakeCos(CosGateway):
-    """只记录 ensure_game_prefixes 调用。"""
+    """内存 COS：记录前缀初始化、预签名与对象，供资源上传接口断言。"""
 
     def __init__(self) -> None:
+        self._bucket = "fake-bucket"
+        self._games_prefix = "games"
         self.ensured_prefixes: list[str] = []
+        self.objects: dict[str, dict[str, Any]] = {}
+        self.presigned: list[dict[str, Any]] = []
+        self.deleted: list[str] = []
 
     def ensure_game_prefixes(self, game_id: object) -> None:
         self.ensured_prefixes.append(str(game_id))
+
+    def presign_put(self, key: str, *, content_type: str, expires_seconds: int) -> str:
+        self.presigned.append(
+            {"key": key, "content_type": content_type, "expires_seconds": expires_seconds}
+        )
+        return f"https://fake-cos.example/{key}?signature=fake"
+
+    def head_object(self, key: str) -> dict[str, Any] | None:
+        return self.objects.get(key)
+
+    def delete_object(self, key: str) -> None:
+        self.deleted.append(key)
+        self.objects.pop(key, None)
+
+    def delete_prefix(self, prefix: str) -> int:
+        keys = [key for key in self.objects if key.startswith(prefix)]
+        for key in keys:
+            self.delete_object(key)
+        return len(keys)
+
+    def list_objects(self, prefix: str) -> list[dict[str, Any]]:
+        return [
+            {"Key": key, **metadata}
+            for key, metadata in self.objects.items()
+            if key.startswith(prefix)
+        ]
+
+    def list_keys(self, prefix: str) -> list[str]:
+        return [str(item["Key"]) for item in self.list_objects(prefix)]
+
+    def add_object(
+        self, key: str, *, size: int, content_type: str, last_modified: str | None = None
+    ) -> None:
+        self.objects[key] = {
+            "Content-Length": str(size),
+            "Content-Type": content_type,
+            "Size": str(size),
+            "LastModified": last_modified or "2026-11-08T00:00:00.000Z",
+        }
 
 
 class FakePgAdmin(PgAdminGateway):

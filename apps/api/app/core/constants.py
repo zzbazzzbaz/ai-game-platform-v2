@@ -45,6 +45,23 @@ STATUS_DISABLED = "disabled"
 # 文件块
 FILE_CHUNK_SIZE = 256 * 1024
 
+# 资源上传（前端 → COS games/{game_id}/input/{asset_id}/{filename}）
+ASSET_FILENAME_MAX_BYTES = 200
+ASSET_FILENAME_FALLBACK = "file"
+ASSET_ALLOWED_CONTENT_TYPE_PREFIXES = ("image/", "audio/", "video/", "text/")
+ASSET_ALLOWED_CONTENT_TYPES = frozenset(
+    {
+        "application/json",
+        "application/pdf",
+        "application/zip",
+        "application/octet-stream",
+    }
+)
+ASSET_DENIED_EXTENSIONS = frozenset(
+    {".sh", ".bash", ".exe", ".dll", ".so", ".dylib", ".bat", ".cmd", ".ps1"}
+)
+ASSET_UNSAFE_FILENAME_CHARS = frozenset('/\\:*?"<>|`\'')
+
 # CloudRun 发布（M6）
 TCB_UPLOAD_TIMEOUT_SECONDS = 300
 TCB_BUSY_RETRY_COUNT = 12
