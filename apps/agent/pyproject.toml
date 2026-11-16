@@ -4,13 +4,13 @@ version = "0.1.0"
 description = "AI 游戏平台 Agent（LangGraph Server + deepagents）"
 requires-python = ">=3.14,<3.15"
 dependencies = [
-    "deepagents==0.7.13",
-    "langchain==1.4.0",
+    "deepagents==0.7.38",
+    "langchain==1.5.0",
     "langchain-deepseek==1.1.0",
     "langchain-openai==1.6.2",
-    "langgraph==1.2.11",
-    "langgraph-sdk==0.4.4",
-    "langsmith==0.12.4",
+    "langgraph==1.2.22",
+    "langgraph-sdk==0.4.14",
+    "langsmith==0.14.17",
     "pydantic-settings==2.15.0",
     "httpx==0.28.1",
     "e2b==2.52.1",

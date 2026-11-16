@@ -2,6 +2,7 @@ import asyncio
 from typing import Any
 
 from deepagents import create_deep_agent
+from deepagents.middleware.filesystem import FilesystemMiddleware
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
 
@@ -32,6 +33,7 @@ async def build_game_agent(config: RunnableConfig) -> CompiledStateGraph[Any]:
         timeout=ENSURE_TIMEOUT_SECONDS,
     )
     sandbox = await asyncio.to_thread(connect_sandbox, ensured["sandbox_id"])
+    backend = AgsBackend(sandbox=sandbox)
     return create_deep_agent(
         model=get_llm(),
         system_prompt=SYSTEM_PROMPT,
@@ -40,5 +42,9 @@ async def build_game_agent(config: RunnableConfig) -> CompiledStateGraph[Any]:
             make_provision_database_tool(thread_id=thread_id),
             make_publish_game_tool(thread_id=thread_id),
         ],
-        backend=AgsBackend(sandbox=sandbox),
+        backend=backend,
+        # 同名 FilesystemMiddleware 覆盖默认实例：read_file 的二进制 base64 先写入
+        # 沙盒 /blobs/<sha256>，state/checkpoint 只留 deepagents_blob 引用；每次模型
+        # 调用时按引用回填图片。这样会话历史不含 base64，模型仍能看图。
+        middleware=[FilesystemMiddleware(backend=backend, offload_binary_content=True)],
     )

@@ -29,14 +29,13 @@ def get_llm() -> BaseChatModel:
         raise ValueError(
             f"不支持的 LLM_PROVIDER：{settings.llm_provider}，仅支持 {'/'.join(_SUPPORTED_PROVIDERS)}"
         )
-    kwargs: dict[str, dict[str, str]] = {}
-    headers = _default_headers(settings.llm_base_url)
-    if headers:
-        kwargs["default_headers"] = headers
-    return init_chat_model(
+    model = init_chat_model(
         settings.llm_model_id,
         model_provider=settings.llm_provider,
         api_key=settings.llm_api_key,
         base_url=settings.llm_base_url,
-        **kwargs,
+        default_headers=_default_headers(settings.llm_base_url) or None,
     )
+    if not isinstance(model, BaseChatModel):
+        raise TypeError("LLM 初始化失败：init_chat_model 返回了不支持的可配置模型包装器")
+    return model

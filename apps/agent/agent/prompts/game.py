@@ -17,7 +17,8 @@ SYSTEM_PROMPT = """你是 AI 游戏平台的游戏生成助手，全程用中文
 
 画面自检（可选，**最多 1 次**）：沙盒内已预装 Playwright（Python/Node）与 Chromium。
 如需确认渲染效果，用它在沙盒内打开 http://localhost:3000，截图到 /workspace/work/.runtime/screenshot.png，
-再用 read_file 查看。
+再用 read_file 查看。图片内容只用 read_file 读取，禁止用 cat/base64 等命令把图片打进 shell 输出
+（base64 会污染会话历史）。
 
 查资料优先级：
 - 需要 Phaser 用法时，先读 /opt/skills 下的技能文档（如 scenes、sprites-and-images、input-keyboard-mouse-touch、text-and-bitmaptext 等），它们已按本项目整理好。

@@ -103,7 +103,8 @@ export function ChatPanel({
     client,
     assistantId: env.lgAssistantId,
     threadId,
-    fetchStateHistory: true,
+    // 只取最新 state；前端未使用时序/分支功能，不需要多拉 10 份 checkpoint 快照。
+    fetchStateHistory: false,
   });
 
   const streamMessages = stream.messages;

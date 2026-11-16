@@ -13,6 +13,7 @@
 - `core/`：config / constants（路径与内部接口契约，改动必须与 api、sandbox/image 镜像同步）。
 - `infra/`：`ags.py`（连接既有沙盒）、`ags_backend.py`（deepagents `BaseSandbox` 适配）、`model.py`（可配置模型）。
 - `tools/`：每个工具一个文件，工厂函数 `make_xxx_tool(...)`；工具返回中文可读字符串，不抛堆栈。
+- 二进制内容卸载：用同名自定义 `FilesystemMiddleware(offload_binary_content=True)` 覆盖默认实例，`read_file` 的 base64 写入沙盒 `/blobs/<sha256>`，state/checkpoint 只存 `deepagents_blob` 引用；模型调用时按引用回填，前端历史不含 base64。
 - `prompts/game.py`：系统提示词（生成区边界、素材规则、发布纪律）。
 - 沙盒内执行必须 `user="root"`（COS 挂载点权限）。
 
