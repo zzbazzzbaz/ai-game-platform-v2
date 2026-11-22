@@ -11,19 +11,25 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { NewGameDialog } from "@/features/games/NewGameDialog";
 import { formatDateTime } from "@/lib/format";
 
+const DEMO_NAME_SUFFIX = " · 体验版";
+
 function GameCard({ game }: { game: GameResponse }) {
   const published = game.public_url !== null;
+  const isDemo = game.name.endsWith(DEMO_NAME_SUFFIX);
 
   return (
     <Card className="gap-4 py-5 transition-shadow hover:shadow-md">
       <CardHeader className="gap-2">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="truncate text-base">{game.name}</CardTitle>
-          {published ? (
-            <Badge variant="success">已发布</Badge>
-          ) : (
-            <Badge variant="secondary">未发布</Badge>
-          )}
+          <div className="flex shrink-0 flex-wrap justify-end gap-1">
+            {isDemo && <Badge variant="outline">体验版</Badge>}
+            {published ? (
+              <Badge variant="success">已发布</Badge>
+            ) : (
+              <Badge variant="secondary">未发布</Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="text-muted-foreground flex flex-col gap-1 text-xs">

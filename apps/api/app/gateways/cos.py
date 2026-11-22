@@ -138,6 +138,32 @@ class CosGateway:
     def list_keys(self, prefix: str) -> list[str]:
         return [str(item["Key"]) for item in self.list_objects(prefix)]
 
+    def copy_prefix(
+        self,
+        *,
+        source_prefix: str,
+        dest_prefix: str,
+        exclude_top: tuple[str, ...] = (),
+    ) -> int:
+        """逐对象复制前缀下的文件；跳过 exclude_top 里的顶层目录与目录占位。
+
+        COS 没有跨前缀的递归复制，这里按「列举 → 读 → 写」实现。工作区是可发布的
+        源码体量（依赖/构建产物/版本包/上传原件由调用方排除），不至于成为瓶颈。
+        """
+        copied = 0
+        for key in self.list_keys(source_prefix):
+            rel = key[len(source_prefix) :]
+            if not rel or rel.endswith("/"):
+                continue
+            if rel.split("/", 1)[0] in exclude_top:
+                continue
+            data = self.get_bytes(key)
+            if data is None:
+                raise UpstreamError(f"复制工作区失败：{key} 不存在")
+            self.put_bytes(f"{dest_prefix}{rel}", data)
+            copied += 1
+        return copied
+
     # ---- 业务辅助 ----
 
     def ensure_game_prefixes(self, game_id: object) -> None:

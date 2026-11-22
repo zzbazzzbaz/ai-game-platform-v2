@@ -14,6 +14,7 @@ from app.api.dependencies import (
     UserIdDep,
 )
 from app.api.schemas.games import (
+    CreateDemoResponse,
     CreateGameBody,
     CreateThreadBody,
     GameResponse,
@@ -52,6 +53,24 @@ def create_game(
 @router.get("/{game_id}", response_model=GameResponse)
 def get_game(game_id: uuid.UUID, session: SessionDep, user_id: UserIdDep) -> Game:
     return game_service.get_owned_game(owner_id=user_id, game_id=game_id, session=session)
+
+
+@router.post("/{game_id}/demos", response_model=CreateDemoResponse, status_code=201)
+def create_demo(
+    game_id: uuid.UUID,
+    session: SessionDep,
+    user_id: UserIdDep,
+    cos: CosDep,
+    pg_admin: PgAdminDep,
+) -> dict[str, Any]:
+    """复制当前项目，创建一个独立的体验版项目（异步改造由 agent 完成）。"""
+    return game_service.create_demo_game(
+        owner_id=user_id,
+        game_id=game_id,
+        session=session,
+        cos=cos,
+        pg_admin=pg_admin,
+    )
 
 
 @router.get("/{game_id}/threads", response_model=list[ThreadResponse])

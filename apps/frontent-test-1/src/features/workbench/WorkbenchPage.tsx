@@ -2,20 +2,29 @@ import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
+  Copy,
   ExternalLink,
   History,
   LoaderCircle,
   MonitorPlay,
   Rocket,
 } from "lucide-react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
 import { ApiError } from "@/api/client";
-import { createThread, getGame, listThreads, publishGame } from "@/api/games";
+import { createDemo, createThread, getGame, listThreads, publishGame } from "@/api/games";
 import { ensureLangGraphThread } from "@/api/langgraph";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ChatPanel } from "@/features/chat/ChatPanel";
 import { PreviewPanel } from "@/features/workbench/PreviewPanel";
 import { ThreadSidebar } from "@/features/workbench/ThreadSidebar";
@@ -36,11 +45,17 @@ export function WorkbenchPage() {
     threadId?: string;
   }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
 
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const [versionsOpen, setVersionsOpen] = React.useState(false);
+  const [demoDialogOpen, setDemoDialogOpen] = React.useState(false);
   const autoCreateRef = React.useRef(false);
+
+  // 由「生成体验版」带过来的提示词：只在本次跳转的会话里自动发送一次。
+  const kickoffPrompt =
+    (location.state as { kickoffPrompt?: string } | null)?.kickoffPrompt ?? null;
 
   const gameQuery = useQuery({
     queryKey: ["game", gameId],
@@ -92,6 +107,19 @@ export function WorkbenchPage() {
       toast.error(error instanceof ApiError ? error.message : "发布失败，请重试");
       // 409 表示已有发布在途：刷新版本列表，让按钮进入「发布中」。
       void queryClient.invalidateQueries({ queryKey: ["versions", gameId] });
+    },
+  });
+
+  const createDemoMutation = useMutation({
+    mutationFn: () => createDemo(gameId),
+    onSuccess: (result) => {
+      toast.success("体验版项目已创建，正在自动改造");
+      navigate(`/games/${result.game_id}/threads/${result.thread_id}`, {
+        state: { kickoffPrompt: result.kickoff_prompt },
+      });
+    },
+    onError: (error) => {
+      toast.error(error instanceof ApiError ? error.message : "创建体验版失败，请重试");
     },
   });
 
@@ -158,6 +186,19 @@ export function WorkbenchPage() {
             </Button>
           )}
           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setDemoDialogOpen(true)}
+            disabled={gameQuery.isPending || createDemoMutation.isPending}
+          >
+            {createDemoMutation.isPending ? (
+              <LoaderCircle className="animate-spin" />
+            ) : (
+              <Copy />
+            )}
+            生成体验版
+          </Button>
+          <Button
             size="sm"
             onClick={() => publishMutation.mutate()}
             disabled={deploying || publishMutation.isPending || gameQuery.isPending}
@@ -212,6 +253,10 @@ export function WorkbenchPage() {
                 gameId={gameId}
                 threadId={threadId}
                 suggestions={SUGGESTIONS}
+                initialPrompt={kickoffPrompt}
+                onInitialPromptConsumed={() =>
+                  navigate(location.pathname, { replace: true, state: null })
+                }
               />
             ) : threadReadyQuery.isError ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
@@ -262,6 +307,44 @@ export function WorkbenchPage() {
         open={versionsOpen}
         onOpenChange={setVersionsOpen}
       />
+
+      <Dialog
+        open={demoDialogOpen}
+        onOpenChange={(open) => {
+          if (!createDemoMutation.isPending) setDemoDialogOpen(open);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>生成体验版</DialogTitle>
+            <DialogDescription>
+              将复制当前项目的代码和素材，创建一个独立的体验版项目（含新数据库）。
+              进入新项目后会自动开始改造：只保留第一关，并加上「玩完整版」入口。
+              建议等当前生成结束后再操作；复制和改造可能产生额外资源费用。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDemoDialogOpen(false)}
+              disabled={createDemoMutation.isPending}
+            >
+              取消
+            </Button>
+            <Button
+              onClick={() => createDemoMutation.mutate()}
+              disabled={createDemoMutation.isPending}
+            >
+              {createDemoMutation.isPending ? (
+                <LoaderCircle className="animate-spin" />
+              ) : (
+                <Copy />
+              )}
+              {createDemoMutation.isPending ? "正在复制…" : "创建并开始改造"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

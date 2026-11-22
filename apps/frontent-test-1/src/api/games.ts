@@ -39,6 +39,12 @@ export interface PublishResponse {
   public_url: string | null;
 }
 
+export interface CreateDemoResponse {
+  game_id: string;
+  thread_id: string;
+  kickoff_prompt: string;
+}
+
 export function listGames(): Promise<GameResponse[]> {
   return apiFetch<GameResponse[]>("/games");
 }
@@ -73,5 +79,12 @@ export function publishGame(
   return apiFetch<PublishResponse>(`/games/${gameId}/publish`, {
     method: "POST",
     body,
+  });
+}
+
+/** 复制当前项目，创建一个独立的体验版项目；改造由新会话里的 agent 执行。 */
+export function createDemo(gameId: string): Promise<CreateDemoResponse> {
+  return apiFetch<CreateDemoResponse>(`/games/${gameId}/demos`, {
+    method: "POST",
   });
 }

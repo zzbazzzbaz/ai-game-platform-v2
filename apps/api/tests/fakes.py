@@ -165,10 +165,14 @@ class FakeCos(CosGateway):
 
 
 class FakePgAdmin(PgAdminGateway):
-    """game_database_url 返回可断言形状的假连接串。"""
+    """game_database_url 返回可断言形状的假连接串；开通只记录不触达 PG。"""
 
     def __init__(self) -> None:
         self.requested: list[str] = []
+        self.ensured: list[str] = []
+
+    def ensure_game_database(self, game_id: str) -> None:
+        self.ensured.append(game_id)
 
     def game_database_url(self, game_id: str) -> str:
         self.requested.append(game_id)

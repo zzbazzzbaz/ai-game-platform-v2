@@ -85,10 +85,16 @@ export function ChatPanel({
   gameId,
   threadId,
   suggestions,
+  initialPrompt = null,
+  onInitialPromptConsumed,
 }: {
   gameId: string;
   threadId: string;
   suggestions: string[];
+  /** 进入会话后自动发送一次的提示词（体验版派生用）。 */
+  initialPrompt?: string | null;
+  /** 提示词已提交后回调，调用方负责清掉路由 state，避免刷新重发。 */
+  onInitialPromptConsumed?: () => void;
 }) {
   const [input, setInput] = React.useState("");
   const [lastSubmitted, setLastSubmitted] = React.useState<string | null>(null);
@@ -97,6 +103,8 @@ export function ChatPanel({
   const [uploadError, setUploadError] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
+  const initialPromptPrefilledRef = React.useRef(false);
+  const initialPromptSentRef = React.useRef(false);
   const client = React.useMemo(() => createLangGraphClient(), []);
 
   const stream = useStream<ChatState>({
@@ -188,6 +196,28 @@ export function ChatPanel({
     setPendingAssets([]);
     setUploadError(null);
   };
+
+  // submit 每次渲染都会重建；用 ref 保存最新实现，避免自动发送的 effect
+  // 因为依赖变化而重复执行。
+  const submitRef = React.useRef(submit);
+  React.useEffect(() => {
+    submitRef.current = submit;
+  });
+
+  // 体验版派生：先回填到输入框（自动发送失败时用户可以直接重发），
+  // 等 LangGraph 线程加载完成后再提交一次。
+  React.useEffect(() => {
+    if (!initialPrompt || initialPromptPrefilledRef.current) return;
+    initialPromptPrefilledRef.current = true;
+    setInput(initialPrompt);
+  }, [initialPrompt]);
+
+  React.useEffect(() => {
+    if (!initialPrompt || initialPromptSentRef.current || stream.isThreadLoading) return;
+    initialPromptSentRef.current = true;
+    submitRef.current(initialPrompt);
+    onInitialPromptConsumed?.();
+  }, [initialPrompt, onInitialPromptConsumed, stream.isThreadLoading]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

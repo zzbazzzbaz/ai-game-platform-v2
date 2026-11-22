@@ -7,8 +7,17 @@ from app.models.game import Game
 
 
 class GameRepository:
-    def create(self, session: Session, *, owner_id: uuid.UUID, name: str) -> Game:
+    def create(
+        self,
+        session: Session,
+        *,
+        owner_id: uuid.UUID,
+        name: str,
+        game_id: uuid.UUID | None = None,
+    ) -> Game:
         game = Game(owner_id=owner_id, name=name)
+        if game_id is not None:
+            game.game_id = game_id
         session.add(game)
         session.commit()
         session.refresh(game)

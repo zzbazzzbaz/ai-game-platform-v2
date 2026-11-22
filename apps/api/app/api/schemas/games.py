@@ -29,6 +29,14 @@ class PublishGameBody(BaseModel):
     name: str = ""
 
 
+class CreateDemoResponse(BaseModel):
+    """体验版克隆结果：新项目已建好，提示词交给前端在新会话中发送。"""
+
+    game_id: uuid.UUID
+    thread_id: uuid.UUID
+    kickoff_prompt: str
+
+
 class PublishResponse(BaseModel):
     """异步受理结果：版本已创建，部署在后台进行。"""
 

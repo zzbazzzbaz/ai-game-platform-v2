@@ -1,9 +1,17 @@
 """游戏 / 会话业务：创建游戏时开通数据库并种入工作区。"""
 
+import logging
 import uuid
+from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.core.constants import (
+    DEMO_COPY_EXCLUDED_TOP,
+    DEMO_KICKOFF_TEMPLATE,
+    DEMO_NAME_SUFFIX,
+    DEMO_THREAD_TITLE,
+)
 from app.core.exceptions import ForbiddenError, NotFoundError, ValidationError
 from app.gateways.cos import CosGateway
 from app.gateways.pg_admin import PgAdminGateway
@@ -13,6 +21,8 @@ from app.models.version import GameVersion
 from app.repositories.game_repository import game_repository
 from app.repositories.thread_repository import thread_repository
 from app.repositories.version_repository import version_repository
+
+logger = logging.getLogger(__name__)
 
 
 def list_games(*, owner_id: uuid.UUID, session: Session) -> list[Game]:
@@ -94,3 +104,66 @@ def list_versions(
     get_owned_game(owner_id=owner_id, game_id=game_id, session=session)
     version_repository.reap_stale(session, game_id=game_id)
     return version_repository.list_by_game(session, game_id)
+
+
+def _demo_kickoff_prompt(*, parent: Game, demo_name: str) -> str:
+    if parent.public_url:
+        cta = f"完整版地址：{parent.public_url}"
+    else:
+        cta = "完整版尚未发布：按钮写「完整版即将上线」，不要编造链接。"
+    return DEMO_KICKOFF_TEMPLATE.format(
+        parent_name=parent.name,
+        demo_name=demo_name,
+        cta=cta,
+    )
+
+
+def create_demo_game(
+    *,
+    owner_id: uuid.UUID,
+    game_id: uuid.UUID,
+    session: Session,
+    cos: CosGateway,
+    pg_admin: PgAdminGateway,
+) -> dict[str, Any]:
+    """从当前游戏复制一份独立项目：新 game / 新会话 / 新空库 / COS 工作区。
+
+    复制的是可发布的工作区（与发布链路同一套排除规则），不复制沙盒、聊天历史、
+    版本历史、公网地址和数据库数据；新项目第一次发布从 v1 开始。
+    """
+    parent = get_owned_game(owner_id=owner_id, game_id=game_id, session=session)
+    parent_prefix = cos.game_prefix(parent.game_id)
+    if not cos.exists(f"{parent_prefix}package.json"):
+        raise ValidationError("当前项目还没有游戏代码，请先在对话中生成游戏")
+
+    demo_id = uuid.uuid4()
+    demo_prefix = cos.game_prefix(demo_id)
+    demo_name = f"{parent.name}{DEMO_NAME_SUFFIX}"
+
+    cos.ensure_game_prefixes(demo_id)
+    try:
+        cos.copy_prefix(
+            source_prefix=parent_prefix,
+            dest_prefix=demo_prefix,
+            exclude_top=DEMO_COPY_EXCLUDED_TOP,
+        )
+        pg_admin.ensure_game_database(str(demo_id))
+        demo = game_repository.create(
+            session, owner_id=owner_id, name=demo_name, game_id=demo_id
+        )
+        thread = thread_repository.create(
+            session, game_id=demo.game_id, title=DEMO_THREAD_TITLE
+        )
+    except Exception:
+        # 复制/开通失败时清掉已写入的工作区，避免留下半成品项目。
+        try:
+            cos.delete_prefix(demo_prefix)
+        except Exception:
+            logger.exception("清理体验版工作区失败：game_id=%s", demo_id)
+        raise
+
+    return {
+        "game_id": demo.game_id,
+        "thread_id": thread.thread_id,
+        "kickoff_prompt": _demo_kickoff_prompt(parent=parent, demo_name=demo_name),
+    }
