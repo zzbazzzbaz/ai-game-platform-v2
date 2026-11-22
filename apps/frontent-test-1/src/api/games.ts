@@ -31,6 +31,14 @@ export interface VersionResponse {
   deployed_at: string | null;
 }
 
+export interface PublishResponse {
+  game_id: string;
+  version_id: string;
+  seq: number;
+  status: string;
+  public_url: string | null;
+}
+
 export function listGames(): Promise<GameResponse[]> {
   return apiFetch<GameResponse[]>("/games");
 }
@@ -56,4 +64,14 @@ export function createThread(gameId: string, title: string): Promise<ThreadRespo
 
 export function listVersions(gameId: string): Promise<VersionResponse[]> {
   return apiFetch<VersionResponse[]>(`/games/${gameId}/versions`);
+}
+
+export function publishGame(
+  gameId: string,
+  body: { thread_id?: string; name?: string },
+): Promise<PublishResponse> {
+  return apiFetch<PublishResponse>(`/games/${gameId}/publish`, {
+    method: "POST",
+    body,
+  });
 }

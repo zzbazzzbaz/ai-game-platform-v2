@@ -10,6 +10,7 @@ import {
   FolderTree,
   ListTodo,
   LoaderCircle,
+  RefreshCw,
   Rocket,
   Terminal,
   Wrench,
@@ -33,6 +34,7 @@ const TOOL_META: Record<string, ToolMeta> = {
   write_todos: { label: "任务清单", icon: ListTodo },
   provision_database: { label: "开通数据库", icon: Database },
   publish_game: { label: "发布游戏", icon: Rocket },
+  publish_status: { label: "发布状态", icon: RefreshCw },
 };
 
 function toolMeta(name: string): ToolMeta {

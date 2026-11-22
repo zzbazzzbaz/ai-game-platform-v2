@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, Integer, Text, UniqueConstraint, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.constants import PLATFORM_SCHEMA
+from app.core.constants import PLATFORM_SCHEMA, VERSION_STATUS_DEPLOYING
 from app.core.database import Base
 
 
@@ -24,7 +24,9 @@ class GameVersion(Base):
         Uuid, ForeignKey(f"{PLATFORM_SCHEMA}.game_threads.thread_id"), nullable=False
     )
     note: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    status: Mapped[str] = mapped_column(Text, nullable=False, default="building")
+    status: Mapped[str] = mapped_column(
+        Text, nullable=False, default=VERSION_STATUS_DEPLOYING
+    )
     revision: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

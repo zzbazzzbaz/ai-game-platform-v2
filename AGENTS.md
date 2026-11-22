@@ -50,7 +50,8 @@
 |---|---|---|---|
 | POST | `/internal/sessions/ensure` | `{thread_id}` | `{game_id, sandbox_id, created}` |
 | POST | `/internal/db/provision` | `{thread_id}` | `{game_id, database_url}` |
-| POST | `/internal/games/publish` | `{thread_id, name}` | `{game_id, public_url, seq}` |
+| POST | `/internal/games/publish` | `{thread_id, name}` | `{game_id, version_id, seq, status, public_url}`（202，异步受理；同游戏在途发布返回 409） |
+| GET | `/internal/games/publish/status?thread_id=` | — | `{game_id, public_url, deploying, version}`（version 为最近一次发布） |
 
 - 常量集中：`apps/api/app/core/constants.py`、`apps/agent/agent/core/constants.py`。
 

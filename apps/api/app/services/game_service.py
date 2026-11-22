@@ -92,4 +92,5 @@ def list_versions(
     *, owner_id: uuid.UUID, game_id: uuid.UUID, session: Session
 ) -> list[GameVersion]:
     get_owned_game(owner_id=owner_id, game_id=game_id, session=session)
+    version_repository.reap_stale(session, game_id=game_id)
     return version_repository.list_by_game(session, game_id)

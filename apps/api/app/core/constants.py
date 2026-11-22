@@ -63,6 +63,11 @@ ASSET_DENIED_EXTENSIONS = frozenset(
 ASSET_UNSAFE_FILENAME_CHARS = frozenset('/\\:*?"<>|`\'')
 
 # CloudRun 发布（M6）
+# 发布任务在 API 进程内异步执行：同一游戏由 PG 咨询锁 + deploying 版本互斥。
+PUBLISH_EXECUTOR_WORKERS = 4
+# 单个发布任务的最长存活时间：构建 300s + 就绪 900s + 健康探测 1200s + 排队余量。
+# 超过该时长仍卡在 deploying 视为进程异常中断，允许被下一次发布回收。
+PUBLISH_JOB_TTL_SECONDS = 4500
 TCB_UPLOAD_TIMEOUT_SECONDS = 300
 TCB_BUSY_RETRY_COUNT = 12
 TCB_BUSY_RETRY_INTERVAL_SECONDS = 30

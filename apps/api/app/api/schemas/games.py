@@ -24,6 +24,21 @@ class CreateThreadBody(BaseModel):
     title: str = ""
 
 
+class PublishGameBody(BaseModel):
+    thread_id: uuid.UUID | None = None
+    name: str = ""
+
+
+class PublishResponse(BaseModel):
+    """异步受理结果：版本已创建，部署在后台进行。"""
+
+    game_id: uuid.UUID
+    version_id: uuid.UUID
+    seq: int
+    status: str
+    public_url: str | None
+
+
 class RenameThreadBody(BaseModel):
     """会话重命名：与参考前端新建框保持一致，最长 64 字。"""
 

@@ -1,7 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
 import { ExternalLink, History, LoaderCircle, RefreshCw, Rocket } from "lucide-react";
 
-import { listVersions, type VersionResponse } from "@/api/games";
+import type { VersionResponse } from "@/api/games";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useVersions } from "@/features/workbench/useVersions";
 import { formatDateTime } from "@/lib/format";
 
 const STATUS_META: Record<
@@ -35,7 +35,8 @@ function VersionItem({ version, current }: { version: VersionResponse; current: 
       </div>
       {version.note && <p className="text-muted-foreground truncate text-xs">{version.note}</p>}
       <p className="text-muted-foreground text-xs">
-        发布于 {formatDateTime(version.deployed_at ?? version.created_at)}
+        {version.status === "deployed" ? "发布于" : "创建于"}{" "}
+        {formatDateTime(version.deployed_at ?? version.created_at)}
       </p>
       {version.revision && (
         <p className="text-muted-foreground truncate font-mono text-[0.6875rem]">
@@ -58,14 +59,11 @@ export function VersionsDrawer({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { data, isPending, isError, error, refetch, isRefetching } = useQuery({
-    queryKey: ["versions", gameId],
-    queryFn: () => listVersions(gameId),
-    enabled: open,
-  });
+  const { data, isPending, isError, error, refetch, isRefetching } = useVersions(gameId);
 
   const versions = data ?? [];
   const currentVersionId = versions.find((version) => version.status === "deployed")?.version_id;
+  const deployingVersion = versions.find((version) => version.status === "deploying");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -79,7 +77,7 @@ export function VersionsDrawer({
             版本历史
           </DialogTitle>
           <DialogDescription>
-            每次发布生成一个不可变版本；在对话里对 AI 说「发布」即可发布新版本
+            每次发布生成一个不可变版本；点击右上角「发布」或在对话里对 AI 说「发布」即可发布新版本
           </DialogDescription>
         </DialogHeader>
 
@@ -104,6 +102,13 @@ export function VersionsDrawer({
           </Button>
         </div>
 
+        {deployingVersion && (
+          <p className="text-muted-foreground flex items-center gap-2 text-xs">
+            <LoaderCircle className="size-3 animate-spin" />
+            v{deployingVersion.seq} 正在发布，版本列表会自动刷新…
+          </p>
+        )}
+
         {isPending ? (
           <div className="flex flex-col gap-2">
             {Array.from({ length: 2 }).map((_, index) => (
@@ -118,7 +123,7 @@ export function VersionsDrawer({
             <Rocket className="size-5" />
             <div>
               <p className="text-foreground font-medium">还没有发布过</p>
-              <p className="mt-1">在对话里对 AI 说「发布」，即可生成公网可玩的链接</p>
+              <p className="mt-1">点击右上角「发布」，即可生成公网可玩的链接</p>
             </div>
           </div>
         ) : (

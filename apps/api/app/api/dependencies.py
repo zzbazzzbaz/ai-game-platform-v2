@@ -4,12 +4,13 @@ from collections.abc import Iterator
 from typing import Annotated, cast
 
 from fastapi import Depends, Header, HTTPException, Request
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import Settings
 from app.core.constants import INTERNAL_TOKEN_HEADER
 from app.core.exceptions import ValidationError
 from app.core.security import decode_access_token
+from app.core.tasks import DaemonExecutor
 from app.gateways.ags import AgsGateway
 from app.gateways.cos import CosGateway
 from app.gateways.pg_admin import PgAdminGateway
@@ -45,6 +46,14 @@ def get_tcb(request: Request) -> TcbGateway:
     return cast(TcbGateway, request.app.state.tcb)
 
 
+def get_session_factory(request: Request) -> sessionmaker[Session]:
+    return cast(sessionmaker[Session], request.app.state.session_factory)
+
+
+def get_publish_executor(request: Request) -> DaemonExecutor:
+    return cast(DaemonExecutor, request.app.state.publish_executor)
+
+
 def _bearer(request: Request) -> str | None:
     auth = request.headers.get("Authorization", "")
     if auth.lower().startswith("bearer "):
@@ -77,5 +86,7 @@ AgsDep = Annotated[AgsGateway, Depends(get_ags)]
 CosDep = Annotated[CosGateway, Depends(get_cos)]
 PgAdminDep = Annotated[PgAdminGateway, Depends(get_pg_admin)]
 TcbDep = Annotated[TcbGateway, Depends(get_tcb)]
+SessionFactoryDep = Annotated[sessionmaker[Session], Depends(get_session_factory)]
+PublishExecutorDep = Annotated[DaemonExecutor, Depends(get_publish_executor)]
 UserIdDep = Annotated[uuid.UUID, Depends(require_user)]
 InternalDep = Annotated[None, Depends(require_internal)]

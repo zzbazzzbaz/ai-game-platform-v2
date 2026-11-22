@@ -1,3 +1,4 @@
+import uuid
 from typing import Any
 
 from fastapi import APIRouter
@@ -7,7 +8,9 @@ from app.api.dependencies import (
     CosDep,
     InternalDep,
     PgAdminDep,
+    PublishExecutorDep,
     SessionDep,
+    SessionFactoryDep,
     TcbDep,
 )
 from app.api.schemas.internal import (
@@ -17,6 +20,7 @@ from app.api.schemas.internal import (
     ProvisionDatabaseResponse,
     PublishGameBody,
     PublishGameResponse,
+    PublishStatusResponse,
 )
 from app.services import provision_service, publish_service, sandbox_service
 
@@ -46,22 +50,41 @@ def provision_database(
     )
 
 
-@router.post("/games/publish", response_model=PublishGameResponse)
+@router.post("/games/publish", response_model=PublishGameResponse, status_code=202)
 def publish_game(
     body: PublishGameBody,
     session: SessionDep,
+    session_factory: SessionFactoryDep,
+    executor: PublishExecutorDep,
     tcb: TcbDep,
     cos: CosDep,
     ags: AgsDep,
     pg_admin: PgAdminDep,
     _: InternalDep,
 ) -> dict[str, Any]:
-    return publish_service.publish_game(
-        thread_id=body.thread_id,
+    thread, game = publish_service.resolve_thread(thread_id=body.thread_id, session=session)
+    version = publish_service.start_publish(
+        game_id=game.game_id,
+        source_thread_id=thread.thread_id,
         name=body.name,
         session=session,
-        tcb=tcb,
+    )
+    publish_service.submit_publish(
+        executor=executor,
+        version_id=version.version_id,
+        session_factory=session_factory,
         cos=cos,
+        tcb=tcb,
         ags=ags,
         pg_admin=pg_admin,
     )
+    return publish_service.publish_result(game=game, version=version)
+
+
+@router.get("/games/publish/status", response_model=PublishStatusResponse)
+def publish_status(
+    thread_id: uuid.UUID,
+    session: SessionDep,
+    _: InternalDep,
+) -> dict[str, Any]:
+    return publish_service.get_publish_status(thread_id=thread_id, session=session)

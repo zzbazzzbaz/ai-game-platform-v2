@@ -8,13 +8,16 @@
 import itertools
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.core.exceptions import UpstreamError
 from app.gateways.cos import CosGateway
 from app.gateways.pg_admin import PgAdminGateway
+from app.gateways.tcb import TcbGateway
 from app.models.game import Game
 
 
@@ -124,6 +127,22 @@ class FakeCos(CosGateway):
             self.delete_object(key)
         return len(keys)
 
+    def put_bytes(self, key: str, data: bytes, content_type: str = "application/octet-stream") -> None:
+        self.objects[key] = {
+            "Content-Length": str(len(data)),
+            "Content-Type": content_type,
+            "Size": str(len(data)),
+            "LastModified": "2026-11-08T00:00:00.000Z",
+            "Body": data,
+        }
+
+    def get_bytes(self, key: str) -> bytes | None:
+        item = self.objects.get(key)
+        if item is None:
+            return None
+        body = item.get("Body")
+        return body if isinstance(body, bytes) else None
+
     def list_objects(self, prefix: str) -> list[dict[str, Any]]:
         return [
             {"Key": key, **metadata}
@@ -174,3 +193,60 @@ def read_game_sandbox(session_factory: sessionmaker[Session], game_id: uuid.UUID
         game = session.get(Game, game_id)
         assert game is not None
         return game.sandbox_id
+
+
+class FakeTcb(TcbGateway):
+    """内存 TCB：记录部署参数；`fail=True` 模拟云托管失败。"""
+
+    def __init__(self) -> None:
+        self.deployments: list[dict[str, Any]] = []
+        self.probed: list[str] = []
+        self.fail = False
+        self.previous_deploy_time: str | None = None
+
+    def get_latest_deploy_time(self, *, server_name: str) -> str | None:
+        return self.previous_deploy_time
+
+    def deploy_package(
+        self,
+        *,
+        server_name: str,
+        zip_bytes: bytes,
+        env_params: dict[str, Any],
+        port: int,
+    ) -> dict[str, Any]:
+        if self.fail:
+            raise UpstreamError("模拟云托管部署失败")
+        self.deployments.append(
+            {
+                "server_name": server_name,
+                "zip_bytes": zip_bytes,
+                "env_params": env_params,
+                "port": port,
+            }
+        )
+        return {
+            "package_name": server_name,
+            "package_version": f"pkg-{len(self.deployments)}",
+        }
+
+    def wait_ready(
+        self, *, server_name: str, previous_deploy_time: str | None = None
+    ) -> str:
+        return "https://fake-game.example"
+
+    def probe_health(self, base_url: str) -> None:
+        self.probed.append(base_url)
+
+
+class FakeExecutor:
+    """记录被提交的发布任务，不实际执行（供接口层断言）。"""
+
+    def __init__(self) -> None:
+        self.submitted: list[Callable[[], None]] = []
+
+    def submit(self, job: Callable[[], None], /) -> None:
+        self.submitted.append(job)
+
+    def shutdown(self) -> None:
+        return

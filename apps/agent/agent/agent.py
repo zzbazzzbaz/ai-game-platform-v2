@@ -14,6 +14,7 @@ from agent.prompts.game import SYSTEM_PROMPT
 from agent.tools.internal_api import call_internal
 from agent.tools.provision_database import make_provision_database_tool
 from agent.tools.publish_game import make_publish_game_tool
+from agent.tools.publish_status import make_publish_status_tool
 
 
 def _require_thread_id(config: RunnableConfig) -> str:
@@ -41,6 +42,7 @@ async def build_game_agent(config: RunnableConfig) -> CompiledStateGraph[Any]:
         tools=[
             make_provision_database_tool(thread_id=thread_id),
             make_publish_game_tool(thread_id=thread_id),
+            make_publish_status_tool(thread_id=thread_id),
         ],
         backend=backend,
         # 同名 FilesystemMiddleware 覆盖默认实例：read_file 的二进制 base64 先写入

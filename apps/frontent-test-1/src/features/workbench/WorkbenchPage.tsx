@@ -1,16 +1,25 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ExternalLink, History, LoaderCircle, MonitorPlay } from "lucide-react";
+import {
+  ArrowLeft,
+  ExternalLink,
+  History,
+  LoaderCircle,
+  MonitorPlay,
+  Rocket,
+} from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
 
 import { ApiError } from "@/api/client";
-import { createThread, getGame, listThreads } from "@/api/games";
+import { createThread, getGame, listThreads, publishGame } from "@/api/games";
 import { ensureLangGraphThread } from "@/api/langgraph";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChatPanel } from "@/features/chat/ChatPanel";
 import { PreviewPanel } from "@/features/workbench/PreviewPanel";
 import { ThreadSidebar } from "@/features/workbench/ThreadSidebar";
+import { useVersions } from "@/features/workbench/useVersions";
 import { VersionsDrawer } from "@/features/workbench/VersionsDrawer";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -45,6 +54,8 @@ export function WorkbenchPage() {
     enabled: gameId !== "",
   });
 
+  const versionsQuery = useVersions(gameId);
+
   // 平台会话与 LangGraph 线程一一对应：进入工作台先补建运行时线程（幂等），
   // 否则读取历史会 404（平台会话先于运行时线程存在）。
   const threadReadyQuery = useQuery({
@@ -71,6 +82,29 @@ export function WorkbenchPage() {
 
   const { mutate: createThreadMutate } = createThreadMutation;
 
+  const publishMutation = useMutation({
+    mutationFn: () => publishGame(gameId, { thread_id: threadIdParam }),
+    onSuccess: (result) => {
+      toast.success(`已开始发布 v${result.seq}`);
+      void queryClient.invalidateQueries({ queryKey: ["versions", gameId] });
+    },
+    onError: (error) => {
+      toast.error(error instanceof ApiError ? error.message : "发布失败，请重试");
+      // 409 表示已有发布在途：刷新版本列表，让按钮进入「发布中」。
+      void queryClient.invalidateQueries({ queryKey: ["versions", gameId] });
+    },
+  });
+
+  // 首次发布成功后 /games/{id} 的 public_url 才会写入，轮询到 deployed 时刷新一次。
+  const hasDeployedVersion =
+    versionsQuery.data?.some((version) => version.status === "deployed") ?? false;
+  const publicUrl = gameQuery.data?.public_url ?? null;
+  React.useEffect(() => {
+    if (hasDeployedVersion && publicUrl === null) {
+      void queryClient.invalidateQueries({ queryKey: ["game", gameId] });
+    }
+  }, [hasDeployedVersion, publicUrl, gameId, queryClient]);
+
   // 未指定会话时：跳到最近会话，没有则自动建一个
   React.useEffect(() => {
     if (threadIdParam !== undefined || gameId === "") return;
@@ -88,8 +122,9 @@ export function WorkbenchPage() {
   }, [threadIdParam, threadsQuery.data, gameId, navigate, createThreadMutate]);
 
   const game = gameQuery.data;
-  const publicUrl = game?.public_url ?? null;
   const published = publicUrl !== null;
+  const deploying =
+    versionsQuery.data?.some((version) => version.status === "deploying") ?? false;
 
   const threadId = threadIdParam ?? null;
   const preparingThread = threadId === null && !threadsQuery.isError;
@@ -107,7 +142,11 @@ export function WorkbenchPage() {
         ) : (
           <span className="truncate text-sm font-medium">{game?.name ?? "游戏"}</span>
         )}
-        {published && <Badge variant="success">已发布</Badge>}
+        {deploying ? (
+          <Badge variant="warning">发布中</Badge>
+        ) : (
+          published && <Badge variant="success">已发布</Badge>
+        )}
 
         <div className="ml-auto flex items-center gap-1">
           {publicUrl !== null && (
@@ -118,6 +157,18 @@ export function WorkbenchPage() {
               </a>
             </Button>
           )}
+          <Button
+            size="sm"
+            onClick={() => publishMutation.mutate()}
+            disabled={deploying || publishMutation.isPending || gameQuery.isPending}
+          >
+            {deploying || publishMutation.isPending ? (
+              <LoaderCircle className="animate-spin" />
+            ) : (
+              <Rocket />
+            )}
+            {deploying ? "发布中" : "发布"}
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setVersionsOpen(true)}>
             <History />
             版本

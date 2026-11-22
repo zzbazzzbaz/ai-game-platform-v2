@@ -4,8 +4,9 @@ agent 侧本地模型必须与此保持一致。
 """
 
 import uuid
+from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class EnsureSessionBody(BaseModel):
@@ -34,6 +35,29 @@ class PublishGameBody(BaseModel):
 
 
 class PublishGameResponse(BaseModel):
+    """异步受理结果：版本已创建，部署在后台进行。"""
+
     game_id: uuid.UUID
-    public_url: str
+    version_id: uuid.UUID
     seq: int
+    status: str
+    public_url: str | None
+
+
+class PublishVersionInfo(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    version_id: uuid.UUID
+    seq: int
+    status: str
+    note: str
+    revision: str | None
+    created_at: datetime
+    deployed_at: datetime | None
+
+
+class PublishStatusResponse(BaseModel):
+    game_id: uuid.UUID
+    public_url: str | None
+    deploying: bool
+    version: PublishVersionInfo | None
