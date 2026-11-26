@@ -126,3 +126,10 @@ jobs:
           # 必须是受信任证书（自签/过期会在这里失败）
           curl -fsS -o /dev/null -w '证书校验：ssl_verify_result=%{ssl_verify_result}（0 = 通过）\n' "https://$SITE_DOMAIN/health"
           curl -s -o /dev/null -m 15 -w 'HTTP 跳转：%{http_code} -> %{redirect_url}\n' "http://$SITE_DOMAIN/health"
+
+      - name: 清理服务器 Docker Hub 登录态
+        if: always()
+        run: |
+          # 镜像仓库是 public，部署完成后不在服务器保留 PAT
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
+            "docker logout docker.io >/dev/null 2>&1 || true" || true
