@@ -11,7 +11,7 @@
 | `apps/frontent-test-1/` | 平台前端 SPA（Vite + React）；**过渡用**，后续换正式前端工程（只换 `WEB_IMAGE`） | Node 工程（npm） |
 | `sandbox/` | 沙盒资产：`image/`（AGS 自定义镜像 Dockerfile + 启动脚本，CI 推 Docker Hub）、`game-template/`（游戏工程模板）、`assets/skills/`（Phaser 技能库） | 镜像/资产 |
 | `deploy/` | 服务器部署：`docker-compose.yml`、`caddy/Caddyfile`、`docker/*.Dockerfile`、`initdb/`、`scripts/`（**细则见 `deploy/AGENTS.md`**） | 部署 |
-| `.github/workflows/ci.yml` | CI：push 自动构建 api/agent/web 推 GHCR、沙盒镜像推 Docker Hub（**不在 CI 里跑测试**，测试本地 `make test`） | CI |
+| `.github/workflows/ci.yml` | CI：push 自动构建 api/agent/web/沙盒四个镜像推 Docker Hub（**不在 CI 里跑测试**，测试本地 `make test`） | CI |
 | `.github/workflows/cd.yml` | CD：**只能手动触发**（`gh workflow run cd.yml -f tag=<main\|sha-xxx>`）→ SSH 拉镜像重建 | CD |
 | `docs/` | 规格与讨论记录（`docs/db/` 为数据库说明） | 文档 |
 
@@ -34,7 +34,7 @@
 - 数据容器：`postgres-games`（**0.0.0.0:10050**，数据库协议直连不走 Caddy，`hostssl` 强制 TLS）、`postgres-platform`、`langgraph-pg`（pgvector）、`langgraph-redis`（均不发布端口）。
 - 配置源：服务器 `/srv/ai-game-platform/.env`（600，不进 git，样板见 `apps/.env.example`）。
 - 发布节奏：push 只跑 CI（构建 `sha-<commit>` + `main` 两个 tag），**不自动上生产**；部署手动 `gh workflow run cd.yml -f tag=main`，回滚 `-f tag=sha-<旧 commit>`。部署逻辑（校验 Caddyfile → 拉镜像 → 重建 → 重载 Caddy）内联在 `cd.yml` 里，服务器上没有部署脚本。
-- 镜像：GHCR `ghcr.io/zzbazzzbaz/ai-game-platform-v2/{api,agent,web}`（public）。
+- 镜像：Docker Hub `15688463267/ai-game-platform-{api,agent,web,sandbox}`（public）。
 - ⚠️ `GAME_DB_SSLMODE` **必须 `no-verify`**：沙盒内 node `pg` 的 `pg-connection-string@2.14` 把 `sslmode=require` 当作 `verify-full`，自签证书下会连不上。
 
 ## 跨服务契约（改动必须同步）

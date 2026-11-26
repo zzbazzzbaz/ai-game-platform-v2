@@ -110,7 +110,8 @@ curl -fsS https://ai-game-platform.test.chatgqt.top/health
 
 | 症状 | 原因 | 处置 |
 |---|---|---|
-| `docker compose pull` 报 unauthorized | 服务器未登录 GHCR（包为私有） | `cd.yml` 已用任务级 `GITHUB_TOKEN` 登录；手工部署则先 `docker login ghcr.io` |
+| `docker compose pull` 报 unauthorized | 服务器未登录 Docker Hub（仓库改成私有或触发限流） | `cd.yml` 每次部署用任务级 PAT 登录；手工部署则先 `docker login docker.io` |
+| `docker compose pull` 报 manifest unknown | 该 tag 的 CI 还没跑完 / Docker Hub 上没有这个 `sha-` 构建 | 等 CI 绿后重试，或 `gh run list --workflow=ci.yml` 确认 |
 | `systemctl reload caddy` permission denied | Caddyfile 不是 644 | `chmod 644 caddy/Caddyfile` 后重试 |
 | 站点 503 `waiting for deploy` | 只跑了 bootstrap，Caddyfile 还是占位配置 | 在开发机跑一次 CD（`gh workflow run cd.yml -f tag=main`） |
 | 443 不通 / 证书签发失败 | 轻量防火墙未放行 443（续期还需 80） | 控制台放行后 reload；临时可切回 HTTP（见 `caddy/Caddyfile` 顶部注释） |

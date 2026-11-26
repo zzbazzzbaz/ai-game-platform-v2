@@ -1,6 +1,7 @@
 # CD：只能手动触发（gh workflow run cd.yml -f tag=main），push 不自动上生产
 # tag 取 CI 推过的镜像：main = main 分支最新构建；sha-<commit> = 任意历史构建（回滚）
 #   回滚示例：gh workflow run cd.yml -f tag=sha-<上一个 commit 的 40 位 sha>
+# 镜像仓库：Docker Hub（docker.io），服务器每次部署用任务级凭据登录后拉取
 name: cd
 
 on:
@@ -14,7 +15,6 @@ on:
 
 permissions:
   contents: read
-  packages: read
 
 concurrency:
   group: cd
@@ -60,12 +60,13 @@ jobs:
             deploy/docker-compose.yml deploy/caddy deploy/initdb deploy/scripts \
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_ROOT/"
 
-      - name: 在服务器登录 GHCR（用任务级临时凭据，服务器不留长期令牌）
+      - name: 在服务器登录 Docker Hub（用任务级临时凭据，服务器不留长期令牌）
         env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
-            "printf '%s' '$GHCR_TOKEN' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+            "printf '%s' '$DOCKERHUB_TOKEN' | docker login docker.io -u '$DOCKERHUB_USER' --password-stdin"
 
       - name: 服务器上部署（校验 Caddyfile → 拉镜像 → 重建容器 → 重载 Caddy）
         env:
