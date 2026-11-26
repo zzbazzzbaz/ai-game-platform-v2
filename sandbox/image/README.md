@@ -57,7 +57,7 @@ agr tool create -n ai-game-platform-sandbox-hk -t custom --region ap-hongkong \
       {"Name": "novnc", "Port": 9000, "Protocol": "TCP"},
       {"Name": "envd", "Port": 49983, "Protocol": "TCP"}
     ],
-    "Resources": {"CPU": "1000m", "Memory": "2Gi", "Storage": "10Gi"},
+    "Resources": {"CPU": "1000m", "Memory": "1Gi", "Storage": "10Gi"},
     "Probe": {
       "HttpGet": {"Path": "/health", "Port": 49983, "Scheme": "HTTP"},
       "ReadyTimeoutMs": 30000, "ProbeTimeoutMs": 3000, "ProbePeriodMs": 3000,
@@ -74,12 +74,12 @@ agr tool create -n ai-game-platform-sandbox-hk -t custom --region ap-hongkong \
   AGS 只允许 **CPU:Memory = 1:1 / 1:2 / 2:1**（CPU 档位 0.5/1/2/4/8/16/32 核，内存 1Gi 步进）：
   0.5 核只能配 1Gi、1 核只能配 1–2Gi、2 核可配 1/2/4Gi……`0.5C4G`、`1C4G` 都会被 AGS 拒绝
   （`InvalidParameterValue.ResourceSpecification`）；
-- **当前规格为 1C2G（`1000m` / `2Gi` / `10Gi`）**，2026-11-01 由 2C4G 下调（成本）；
+- **当前规格为 1C1G（`1000m` / `1Gi` / `10Gi`）**，2026-11-26 由 1C2G 下调（成本）；1C1G 下 Chromium + Node + esbuild 实测可用，但内存余量约 370 MiB，复杂游戏需观察 OOM；
 - 规格可**原地更新**（只影响之后新建的实例，不用改代码/`.env`）：
   ```bash
   agr tool get <tool-id> -o json > before.json   # 备份
   # 取 .Data.CustomConfiguration，删掉只读的 ImageDigest，只改 Resources，再回写
-  jq '.Data.CustomConfiguration | del(.ImageDigest) | .Resources = {"CPU":"1000m","Memory":"2Gi","Storage":"10Gi"}' \
+  jq '.Data.CustomConfiguration | del(.ImageDigest) | .Resources = {"CPU":"1000m","Memory":"1Gi","Storage":"10Gi"}' \
     before.json > custom.json
   agr tool update <tool-id> --custom-configuration @custom.json --wait
   ```
