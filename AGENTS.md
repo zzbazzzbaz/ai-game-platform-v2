@@ -9,9 +9,9 @@
 | `apps/api/` | FastAPI 平台后端；唯一持云凭证与 PG 管理凭证；认证签发方 | Python 工程（uv） |
 | `apps/agent/` | LangGraph Server + deepagents；只持沙盒访问权（E2B Key）与内部令牌 | Python 工程（uv） |
 | `apps/frontent-test-1/` | 平台前端 SPA（Vite + React）；**过渡用**，后续换正式前端工程（只换 `WEB_IMAGE`） | Node 工程（npm） |
-| `sandbox/` | 沙盒资产：`image/`（AGS 自定义镜像 Dockerfile + 启动脚本）、`game-template/`（游戏工程模板）、`assets/skills/`（Phaser 技能库） | 镜像/资产 |
+| `sandbox/` | 沙盒资产：`image/`（AGS 自定义镜像 Dockerfile + 启动脚本，CI 推 Docker Hub）、`game-template/`（游戏工程模板）、`assets/skills/`（Phaser 技能库） | 镜像/资产 |
 | `deploy/` | 服务器部署：`docker-compose.yml`、`caddy/Caddyfile`、`docker/*.Dockerfile`、`initdb/`、`scripts/`（**细则见 `deploy/AGENTS.md`**） | 部署 |
-| `.github/workflows/ci.yml` | CI：push 自动构建推送 GHCR（**不在 CI 里跑测试**，测试本地 `make test`） | CI |
+| `.github/workflows/ci.yml` | CI：push 自动构建 api/agent/web 推 GHCR、沙盒镜像推 Docker Hub（**不在 CI 里跑测试**，测试本地 `make test`） | CI |
 | `.github/workflows/cd.yml` | CD：**只能手动触发**（`gh workflow run cd.yml -f tag=<main\|sha-xxx>`）→ SSH 拉镜像重建 | CD |
 | `docs/` | 规格与讨论记录（`docs/db/` 为数据库说明） | 文档 |
 

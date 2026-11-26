@@ -5,9 +5,11 @@
 #   执行：envd(:49983 命令/文件) + Node 24 + Python3/Playwright（agent 截图自检）
 # 资产烘焙：游戏模板及依赖（/opt/game-template）、Phaser 技能库（/opt/skills）
 #
-# 构建（必须 linux/amd64；上下文为 sandbox/ 目录）：
+# 构建由 GitHub Actions 完成并推 Docker Hub（见 .github/workflows/ci.yml）：
+#   docker.io/<DOCKERHUB_USERNAME>/ai-game-platform-sandbox:sha-<commit>
+# 本地构建（可选，必须 linux/amd64；上下文为 sandbox/ 目录）：
 #   cd sandbox && docker build -f image/Dockerfile --platform=linux/amd64 \
-#     -t ccr.ccs.tencentyun.com/aigame/sandbox:rev4 .
+#     -t <DOCKERHUB_USERNAME>/ai-game-platform-sandbox:local .
 FROM node:24-bookworm-slim
 
 # AGS 管理守护进程（官方镜像仅提供 /usr/bin/envd 二进制）
