@@ -113,6 +113,8 @@ export function WorkbenchPage() {
   const createDemoMutation = useMutation({
     mutationFn: () => createDemo(gameId),
     onSuccess: (result) => {
+      // 路由参数变化时 WorkbenchPage 会被复用，必须显式关掉旧页面的弹窗。
+      setDemoDialogOpen(false);
       toast.success("体验版项目已创建，正在自动改造");
       navigate(`/games/${result.game_id}/threads/${result.thread_id}`, {
         state: { kickoffPrompt: result.kickoff_prompt },
