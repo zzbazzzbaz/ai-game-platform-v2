@@ -1,0 +1,1063 @@
+:root {
+  --bg: #f4f6fb;
+  --paper: #ffffff;
+  --paper-2: #f8fafc;
+  --ink: #1e293b;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --primary: #4f46e5;
+  --primary-soft: #eef2ff;
+  --sky: #0284c7;
+  --sky-soft: #e0f2fe;
+  --green: #059669;
+  --green-soft: #d1fae5;
+  --violet: #7c3aed;
+  --violet-soft: #f3e8ff;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--sans);
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+textarea {
+  font-family: inherit;
+}
+
+/* ------------------------------------------------------------
+   React Flow 基础布局（本地样式）
+   ------------------------------------------------------------ */
+
+.react-flow {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  direction: ltr;
+}
+
+.react-flow__container {
+  position: absolute;
+  inset: 0;
+}
+
+.react-flow__pane {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  touch-action: none;
+}
+
+.react-flow__pane::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+}
+
+.react-flow__pane:active::before {
+  cursor: grabbing;
+}
+
+.react-flow__viewport {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+.react-flow__renderer {
+  position: absolute;
+  inset: 0;
+}
+
+.react-flow__background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.react-flow__edges {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.react-flow__edges svg {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.react-flow__edge {
+  pointer-events: visibleStroke;
+  cursor: pointer;
+}
+
+.react-flow__edge-path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.react-flow__nodes {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+.react-flow__node {
+  position: absolute;
+  box-sizing: border-box;
+  transform-origin: 0 0;
+  user-select: none;
+  pointer-events: all;
+  cursor: grab;
+}
+
+.react-flow__node.dragging {
+  cursor: grabbing;
+}
+
+.react-flow__node.selected {
+  z-index: 1000;
+}
+
+.react-flow__node-spacer {
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.spacer-node {
+  width: 1px;
+  height: 1px;
+}
+
+.react-flow__handle {
+  position: absolute;
+  min-width: 0;
+  min-height: 0;
+  width: 1px;
+  height: 1px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.react-flow__handle-left {
+  top: 50%;
+  left: 0;
+  transform: translate(-50%, -50%);
+}
+
+.react-flow__handle-right {
+  top: 50%;
+  right: 0;
+  transform: translate(50%, -50%);
+}
+
+.react-flow__handle-top {
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.react-flow__handle-bottom {
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 50%);
+}
+
+.react-flow__edgelabel-renderer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  user-select: none;
+}
+
+.react-flow__attribution {
+  display: none;
+}
+
+/* ------------------------------------------------------------
+   页面框架
+   ------------------------------------------------------------ */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------
+   Tabs
+   ------------------------------------------------------------ */
+
+.tabs {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  flex: 0 0 56px;
+  padding: 0 22px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(248, 250, 252, 0.86);
+  z-index: 10;
+}
+
+.tabs-inner {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #e9edf7;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 31px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.tab svg {
+  color: #94a3b8;
+}
+
+.tab:hover {
+  background: rgba(255, 255, 255, 0.6);
+  color: #334155;
+}
+
+.tab.is-active {
+  color: var(--ink);
+  background: var(--paper);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.08),
+    0 0 0 1px rgba(226, 232, 240, 0.9);
+}
+
+.tab.is-active svg {
+  color: var(--primary);
+}
+
+/* ------------------------------------------------------------
+   工作区
+   ------------------------------------------------------------ */
+
+.workspace {
+  position: relative;
+  display: flex;
+  flex: 1;
+  gap: 16px;
+  min-height: 0;
+  padding: 16px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(99, 102, 241, 0.1), transparent 34%),
+    radial-gradient(circle at 96% 100%, rgba(14, 165, 233, 0.08), transparent 38%),
+    linear-gradient(180deg, #f4f6fb 0%, #eef2f9 100%);
+}
+
+.canvas-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+  box-shadow:
+    0 18px 44px rgba(15, 23, 42, 0.07),
+    0 2px 6px rgba(15, 23, 42, 0.03);
+}
+
+.canvas-tools {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 4px 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(8px);
+}
+
+.canvas-hint {
+  color: var(--muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.canvas-tools .info-btn {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  background: transparent;
+}
+
+.canvas-tools .info-btn:hover {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.flow-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #f8fafc;
+}
+
+/* ------------------------------------------------------------
+   缩放按钮
+   ------------------------------------------------------------ */
+
+.zoom-bar {
+  position: absolute;
+  left: 17px;
+  bottom: 17px;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+.zoom-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-bottom: 1px solid #eef2f7;
+  background: var(--paper);
+  color: #475569;
+  cursor: pointer;
+}
+
+.zoom-btn:last-child {
+  border-bottom: 0;
+}
+
+.zoom-btn:hover {
+  background: #f1f5f9;
+  color: var(--primary);
+}
+
+.zoom-fit {
+  color: var(--primary);
+}
+
+/* ------------------------------------------------------------
+   节点
+   ------------------------------------------------------------ */
+
+.react-flow__node-game {
+  width: 168px;
+}
+
+.game-node {
+  position: relative;
+  display: flex;
+  width: 168px;
+  min-height: 58px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #ffffff;
+  box-shadow: 0 5px 14px rgba(15, 23, 42, 0.06);
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.game-node:hover {
+  border-color: #c7d2e3;
+  box-shadow: 0 9px 22px rgba(15, 23, 42, 0.1);
+}
+
+.game-node.is-selected {
+  border-color: var(--primary);
+  box-shadow:
+    0 0 0 3px rgba(79, 70, 229, 0.16),
+    0 9px 22px rgba(15, 23, 42, 0.1);
+}
+
+.node-strip {
+  width: 4px;
+  flex: 0 0 4px;
+  background: var(--node-color);
+}
+
+.node-body {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px 12px 10px 14px;
+}
+
+.node-title {
+  color: #1e293b;
+  font-size: 13.5px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.node-tag {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 6px;
+  border: 1px solid color-mix(in srgb, var(--node-color) 18%, transparent);
+  border-radius: 999px;
+  background: var(--node-tint);
+  color: var(--node-color);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.game-node.type-start {
+  --node-color: #1e293b;
+  --node-tint: #e2e8f0;
+  border-color: #1e293b;
+  background: #1e293b;
+}
+
+.game-node.type-start .node-strip {
+  background: #818cf8;
+}
+
+.game-node.type-start .node-title {
+  color: #ffffff;
+}
+
+.game-node.type-start .node-sub {
+  color: #cbd5e1;
+}
+
+.game-node.type-start .node-tag {
+  border-color: #475569;
+  background: #334155;
+  color: #e0e7ff;
+}
+
+.game-node.type-end {
+  --node-color: #059669;
+  --node-tint: #d1fae5;
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.game-node.type-end .node-title {
+  color: #166534;
+}
+
+.game-node.type-end .node-sub {
+  color: #4d7c5a;
+}
+
+.game-node.type-end .node-tag {
+  border-color: #86efac;
+  background: #d1fae5;
+  color: #166534;
+}
+
+.game-node.type-decision {
+  --node-color: #0284c7;
+  --node-tint: #e0f2fe;
+  border-color: #bae6fd;
+  background: #f0f9ff;
+}
+
+.game-node.type-action {
+  --node-color: #4f46e5;
+  --node-tint: #eef2ff;
+}
+
+.game-node.type-reward {
+  --node-color: #7c3aed;
+  --node-tint: #f3e8ff;
+}
+
+.game-node.type-note {
+  --node-color: #64748b;
+  --node-tint: #f1f5f9;
+}
+
+.game-node.type-stone {
+  --node-color: #64748b;
+  --node-tint: #f1f5f9;
+}
+
+.game-node.type-gold {
+  --node-color: #9a3412;
+  --node-tint: #f5f5f4;
+}
+
+.game-node.type-diamond {
+  --node-color: #0284c7;
+  --node-tint: #e0f2fe;
+}
+
+.game-node.type-star {
+  --node-color: #7c3aed;
+  --node-tint: #f3e8ff;
+}
+
+.game-node.type-save {
+  --node-color: #4f46e5;
+  --node-tint: #eef2ff;
+}
+
+.game-node.type-stone,
+.game-node.type-gold,
+.game-node.type-diamond,
+.game-node.type-star,
+.game-node.type-save {
+  min-height: 84px;
+}
+
+.game-node.type-stone .node-body,
+.game-node.type-gold .node-body,
+.game-node.type-diamond .node-body,
+.game-node.type-star .node-body,
+.game-node.type-save .node-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.game-node.type-stone .node-tag,
+.game-node.type-gold .node-tag,
+.game-node.type-diamond .node-tag,
+.game-node.type-star .node-tag,
+.game-node.type-save .node-tag {
+  align-self: center;
+  margin-top: 8px;
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+/* ------------------------------------------------------------
+   关卡卡片
+   ------------------------------------------------------------ */
+
+.react-flow__node-level {
+  width: 180px;
+}
+
+.level-node {
+  position: relative;
+  width: 180px;
+  height: 88px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 5px 14px rgba(15, 23, 42, 0.06);
+  padding: 12px 14px;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.level-node::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--primary);
+}
+
+.level-node:hover {
+  border-color: #c7d2e3;
+  box-shadow: 0 9px 22px rgba(15, 23, 42, 0.1);
+}
+
+.level-node.is-selected {
+  border-color: var(--primary);
+  box-shadow:
+    0 0 0 3px rgba(79, 70, 229, 0.16),
+    0 9px 22px rgba(15, 23, 42, 0.1);
+}
+
+.level-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.level-number {
+  color: var(--primary);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.level-time {
+  padding: 2px 6px;
+  border: 1px solid #dbe3ee;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.level-title {
+  margin-top: 2px;
+  color: #1e293b;
+  font-size: 13.5px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+
+.level-target {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 2px 7px;
+  border: 1px solid #c7d2fe;
+  border-radius: 5px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------
+   连线标签
+   ------------------------------------------------------------ */
+
+.edge-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 26;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.edge-path {
+  fill: none;
+  stroke-width: 1.8;
+  pointer-events: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.edge-flow {
+  stroke: #7c8ba1;
+}
+
+.edge-branch {
+  stroke: #0284c7;
+}
+
+.edge-loop {
+  stroke: #6366f1;
+  stroke-width: 1.5;
+  stroke-dasharray: 6 5;
+}
+
+.edge-success {
+  stroke: #059669;
+}
+
+.edge-muted {
+  stroke: #cbd5e1;
+  stroke-width: 1.5;
+  stroke-dasharray: 6 5;
+}
+
+.edge-path.is-selected,
+.react-flow__edge.selected .edge-path {
+  stroke-width: 3;
+}
+
+.edge-label {
+  position: absolute;
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  color: #475569;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------
+   详情面板
+   ------------------------------------------------------------ */
+
+.detail-panel {
+  width: 336px;
+  flex: 0 0 336px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.detail-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.detail-panel::-webkit-scrollbar-thumb {
+  border: 2px solid #eef2f9;
+  border-radius: 999px;
+  background: #d6deea;
+}
+
+.detail-card {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+  box-shadow:
+    0 18px 44px rgba(15, 23, 42, 0.06),
+    0 2px 6px rgba(15, 23, 42, 0.03);
+}
+
+.overview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.detail-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.detail-card h3 {
+  margin: 10px 0 6px;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 780;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.detail-desc {
+  margin: 8px 0 16px;
+  color: #475569;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.section-label {
+  margin: 16px 0 8px;
+  color: var(--primary);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.legend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-size: 11.5px;
+}
+
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 50%;
+  background: var(--legend-color);
+}
+
+.legend-dot.is-dashed {
+  width: 10px;
+  height: 10px;
+  flex-basis: 10px;
+  border: 2px dashed var(--legend-color);
+  background: transparent;
+}
+
+.overview-note {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.6;
+}
+
+.detail-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.detail-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 780;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: #f1f5f9;
+  color: var(--ink);
+}
+
+.detail-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.value-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.value-chip {
+  padding: 4px 7px;
+  border: 1px solid #c7d2fe;
+  border-radius: 6px;
+  background: var(--primary-soft);
+  color: #3730a3;
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.primary-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  margin-top: 18px;
+  padding: 11px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--primary);
+  box-shadow: 0 8px 18px rgba(79, 70, 229, 0.22);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.primary-btn svg {
+  color: #ffffff;
+}
+
+.primary-btn:hover {
+  background: #4338ca;
+}
+
+.primary-btn:active {
+  transform: translateY(1px);
+}
+
+.prompt-box {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper-2);
+}
+
+.prompt-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.prompt-box textarea {
+  width: 100%;
+  min-height: 102px;
+  resize: vertical;
+  padding: 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  outline: none;
+  background: #ffffff;
+  color: #334155;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.prompt-box textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+.prompt-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 7px;
+}
+
+.prompt-hint {
+  color: var(--muted);
+  font-size: 9.5px;
+}
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.copy-btn:hover {
+  background: #f1f5f9;
+}
+
+/* ------------------------------------------------------------
+   响应式
+   ------------------------------------------------------------ */
+
+@media (max-width: 1279px) {
+  .detail-panel {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    bottom: 16px;
+    z-index: 50;
+    display: none;
+    width: 344px;
+    flex: none;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .detail-panel.is-open {
+    display: block;
+  }
+
+  .detail-panel .detail-card {
+    max-height: 100%;
+    overflow-y: auto;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  }
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .canvas-card {
+    min-height: 440px;
+  }
+
+  .detail-panel {
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: calc(100% - 16px);
+  }
+
+}

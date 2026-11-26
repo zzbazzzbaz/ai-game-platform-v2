@@ -1,0 +1,105 @@
+{
+  "id": "hook",
+  "tab": "抓取规则",
+  "nodes": [
+    {
+      "id": "h-launch",
+      "title": "钩子飞出去",
+      "detail": "按一下，朝当前方向伸"
+    },
+    {
+      "id": "h-scan",
+      "title": "一路检查",
+      "detail": "看钩尖有没有碰到东西"
+    },
+    {
+      "id": "h-hit",
+      "title": "碰到了吗？",
+      "detail": "碰到物品就算抓到"
+    },
+    {
+      "id": "h-grab",
+      "title": "抓住",
+      "detail": "按重量决定拉回速度"
+    },
+    {
+      "id": "h-collect",
+      "title": "拉回来加分",
+      "detail": "石头 10、黄金 60、钻石 300",
+      "attributes": [
+        "石头 +10",
+        "黄金 +60",
+        "钻石 +300"
+      ]
+    },
+    {
+      "id": "h-swing",
+      "title": "准备下一钩",
+      "detail": "回到晃动，等你再按"
+    },
+    {
+      "id": "h-extend",
+      "title": "继续往前",
+      "detail": "没碰到就再伸远一点"
+    },
+    {
+      "id": "h-max",
+      "title": "到最远了吗？",
+      "detail": "到最远就空手收回",
+      "attributes": [
+        "最远 600"
+      ]
+    },
+    {
+      "id": "h-empty",
+      "title": "空手收回",
+      "detail": "没抓到，没有加分"
+    }
+  ],
+  "edges": [
+    {
+      "from": "h-launch",
+      "to": "h-scan"
+    },
+    {
+      "from": "h-scan",
+      "to": "h-hit"
+    },
+    {
+      "from": "h-hit",
+      "to": "h-grab",
+      "title": "碰到了"
+    },
+    {
+      "from": "h-grab",
+      "to": "h-collect"
+    },
+    {
+      "from": "h-collect",
+      "to": "h-swing"
+    },
+    {
+      "from": "h-hit",
+      "to": "h-extend",
+      "title": "没碰到"
+    },
+    {
+      "from": "h-extend",
+      "to": "h-max"
+    },
+    {
+      "from": "h-max",
+      "to": "h-empty",
+      "title": "到最远了"
+    },
+    {
+      "from": "h-max",
+      "to": "h-hit",
+      "title": "还没到"
+    },
+    {
+      "from": "h-empty",
+      "to": "h-swing"
+    }
+  ]
+}

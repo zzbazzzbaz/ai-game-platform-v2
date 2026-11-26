@@ -1,0 +1,117 @@
+{
+  "id": "loop",
+  "tab": "怎么玩",
+  "nodes": [
+    {
+      "id": "start",
+      "title": "选一关",
+      "detail": "倒计时开始，目标分写在上面",
+      "attributes": [
+        "限时 85–110 秒",
+        "目标 320–745 分"
+      ]
+    },
+    {
+      "id": "swing",
+      "title": "钩子晃动",
+      "detail": "左右来回摆，等你按下去",
+      "attributes": [
+        "左右各约 60°"
+      ]
+    },
+    {
+      "id": "launch",
+      "title": "按一下",
+      "detail": "空格或点屏幕，钩子飞出去"
+    },
+    {
+      "id": "hit",
+      "title": "碰到了吗？",
+      "detail": "钩尖碰到物品才算抓到"
+    },
+    {
+      "id": "grab",
+      "title": "抓住",
+      "detail": "东西越重，拉回来越慢"
+    },
+    {
+      "id": "score",
+      "title": "拉回来加分",
+      "detail": "石头 10、黄金 60、钻石 300",
+      "attributes": [
+        "石头 +10",
+        "黄金 +60",
+        "钻石 +300"
+      ]
+    },
+    {
+      "id": "check",
+      "title": "分数够了吗？",
+      "detail": "每关都有一个目标分",
+      "attributes": [
+        "目标 320–745 分"
+      ]
+    },
+    {
+      "id": "pass",
+      "title": "过关",
+      "detail": "记录成绩，下一关解锁",
+      "attributes": [
+        "1 星：达标",
+        "2 星：1.25 倍",
+        "3 星：1.6 倍"
+      ]
+    },
+    {
+      "id": "miss",
+      "title": "空手收回",
+      "detail": "没抓到就收回来，再来一钩"
+    }
+  ],
+  "edges": [
+    {
+      "from": "start",
+      "to": "swing"
+    },
+    {
+      "from": "swing",
+      "to": "launch"
+    },
+    {
+      "from": "launch",
+      "to": "hit"
+    },
+    {
+      "from": "hit",
+      "to": "grab",
+      "title": "碰到了"
+    },
+    {
+      "from": "hit",
+      "to": "miss",
+      "title": "没碰到"
+    },
+    {
+      "from": "grab",
+      "to": "score"
+    },
+    {
+      "from": "score",
+      "to": "check"
+    },
+    {
+      "from": "check",
+      "to": "pass"
+    },
+    {
+      "from": "check",
+      "to": "swing",
+      "title": "还不够"
+    },
+    {
+      "from": "miss",
+      "to": "swing",
+      "title": "再来一钩"
+    }
+  ]
+}

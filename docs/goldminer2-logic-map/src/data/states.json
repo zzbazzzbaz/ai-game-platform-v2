@@ -1,0 +1,90 @@
+{
+  "id": "states",
+  "tab": "游戏流程",
+  "nodes": [
+    {
+      "id": "login",
+      "title": "账号",
+      "detail": "登录或注册，保存进度"
+    },
+    {
+      "id": "menu",
+      "title": "主菜单",
+      "detail": "开始游戏、换账号",
+      "attributes": [
+        "5 个矿层",
+        "石头 10 / 黄金 60 / 钻石 300"
+      ]
+    },
+    {
+      "id": "map",
+      "title": "关卡地图",
+      "detail": "5 个矿层，一关一关解锁"
+    },
+    {
+      "id": "play",
+      "title": "游戏中",
+      "detail": "限时、目标分、暂停",
+      "attributes": [
+        "限时 85–110 秒",
+        "目标 320–745 分"
+      ]
+    },
+    {
+      "id": "pause",
+      "title": "暂停",
+      "detail": "继续、重玩、回地图"
+    },
+    {
+      "id": "result",
+      "title": "结算",
+      "detail": "星星、成绩、下一关",
+      "attributes": [
+        "0–3 颗星"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "menu",
+      "to": "map"
+    },
+    {
+      "from": "menu",
+      "to": "login",
+      "title": "没登录"
+    },
+    {
+      "from": "login",
+      "to": "menu"
+    },
+    {
+      "from": "map",
+      "to": "play"
+    },
+    {
+      "from": "play",
+      "to": "pause",
+      "title": "按 ESC"
+    },
+    {
+      "from": "pause",
+      "to": "play",
+      "title": "继续"
+    },
+    {
+      "from": "play",
+      "to": "result"
+    },
+    {
+      "from": "result",
+      "to": "play",
+      "title": "下一关"
+    },
+    {
+      "from": "result",
+      "to": "map",
+      "title": "回地图"
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+{
+  "id": "levels",
+  "tab": "关卡与奖励",
+  "nodes": [
+    {
+      "id": "lv1",
+      "title": "初探矿脉",
+      "detail": "先熟悉钩子",
+      "attributes": [
+        "目标 320 分",
+        "限时 110 秒",
+        "1 颗钻石"
+      ]
+    },
+    {
+      "id": "lv2",
+      "title": "深井宝藏",
+      "detail": "矿层更深，钻石更多",
+      "attributes": [
+        "目标 470 分",
+        "限时 100 秒",
+        "2 颗钻石"
+      ]
+    },
+    {
+      "id": "lv3",
+      "title": "幽暗矿道",
+      "detail": "矿藏更密，钩子更快",
+      "attributes": [
+        "目标 345 分",
+        "限时 95 秒",
+        "钩子更快"
+      ]
+    },
+    {
+      "id": "lv4",
+      "title": "熔岩裂谷",
+      "detail": "钻石藏在最深处",
+      "attributes": [
+        "目标 525 分",
+        "限时 90 秒",
+        "2 颗钻石"
+      ]
+    },
+    {
+      "id": "lv5",
+      "title": "深渊之心",
+      "detail": "最后一钩",
+      "attributes": [
+        "目标 745 分",
+        "限时 85 秒",
+        "3 颗钻石"
+      ]
+    },
+    {
+      "id": "v-stone",
+      "title": "石头",
+      "detail": "最常见，拉得最慢",
+      "attributes": [
+        "10 分"
+      ]
+    },
+    {
+      "id": "v-gold",
+      "title": "黄金",
+      "detail": "主力收入，拉得中等",
+      "attributes": [
+        "60 分"
+      ]
+    },
+    {
+      "id": "v-diamond",
+      "title": "钻石",
+      "detail": "最深、最值钱、拉得最快",
+      "attributes": [
+        "300 分"
+      ]
+    },
+    {
+      "id": "v-stars",
+      "title": "星星",
+      "detail": "分数越高，星星越多",
+      "attributes": [
+        "0–3 颗",
+        "1 星：达标",
+        "2 星：1.25 倍",
+        "3 星：1.6 倍"
+      ]
+    },
+    {
+      "id": "v-save",
+      "title": "存档",
+      "detail": "登录后保存进度",
+      "attributes": [
+        "自动保存"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "lv1",
+      "to": "lv2"
+    },
+    {
+      "from": "lv2",
+      "to": "lv3"
+    },
+    {
+      "from": "lv3",
+      "to": "lv4"
+    },
+    {
+      "from": "lv4",
+      "to": "lv5"
+    },
+    {
+      "from": "lv5",
+      "to": "v-save",
+      "title": "保存成绩"
+    }
+  ]
+}
