@@ -81,14 +81,15 @@
 
 ```bash
 # 首次初始化（sudo、幂等）
-# 1) 服务器上准备部署根目录，并把 caddy/scripts/initdb/compose 放进去
-sudo install -d -o guoqitong -g guoqitong -m 755 /srv/ai-game-platform
+# 1) 开发机：准备部署根目录并上传首次需要的文件
+ssh guoqitong@43.129.212.75 'sudo install -d -o guoqitong -g guoqitong -m 755 /srv/ai-game-platform'
 scp -r deploy/caddy deploy/scripts deploy/initdb deploy/docker-compose.yml \
   guoqitong@43.129.212.75:/srv/ai-game-platform/
-# 2) 服务器上执行 bootstrap
+# 2) 服务器：执行 bootstrap
+ssh guoqitong@43.129.212.75
 sudo DOMAIN=ai-game-platform.test.chatgqt.top ACME_EMAIL=admin@chatgqt.top \
   bash /srv/ai-game-platform/scripts/bootstrap.sh
-# 3) 放 .env：照抄 apps/.env.example，按文件头改 16 项，chmod 600
+# 3) 在服务器放 .env：照抄 apps/.env.example，按文件头改 16 项，chmod 600
 # 之后 CD 只覆盖 docker-compose.yml 和 initdb/，不再同步 caddy/、scripts/
 
 # 手工更新 Caddyfile（仅变更时；CD 不再同步）
