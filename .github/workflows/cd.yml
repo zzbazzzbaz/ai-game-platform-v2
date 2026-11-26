@@ -132,4 +132,4 @@ jobs:
         run: |
           # 镜像仓库是 public，部署完成后不在服务器保留 PAT
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes "$DEPLOY_USER@$DEPLOY_HOST" \
-            "docker logout docker.io >/dev/null 2>&1 || true" || true
+            "docker logout >/dev/null 2>&1 || true" || true
