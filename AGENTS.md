@@ -44,6 +44,8 @@
 - COS 前缀：游戏资产 `games/{game_id}/**`；版本包 `games/{game_id}/versions/{seq}.tar`。
 - 托管服务名：`g-{sid}`（云托管服务名上限 36 字符，`game-{game_id}` 超限；仍仅由 game_id 派生）。
 - 游戏数据库：`game_{sid}`、role `game_{sid}_rw`，密码 = `base64url(HMAC-SHA256(GAME_DB_PASSWORD_MASTER_SECRET, game_id))`；开通必须 `REVOKE CONNECT ... FROM PUBLIC` 且幂等（不重建、不改密码）。
+- 玩法图：存平台库 `game_maps`（`(game_id, map_id)` 唯一，整张覆盖保存，`revision` 递增）；公开只读接口 `GET /api/v1/games/{game_id}/maps` 只返回 id 数组、`GET /api/v1/games/{game_id}/maps/{map_id}` 返回单图详情；不写工作区/COS/发布包，不计算源码指纹。
+- 沙盒续期：前端在工作台打开期间每 2 分钟调用 `POST /api/v1/sessions/{thread_id}/sandbox/renew`；后端只续已有沙盒，不创建，每次把剩余租期硬编码设为 300 秒（`SANDBOX_RENEW_TIMEOUT_SECONDS`）。
 - 内部接口（agent → api，`X-Internal-Token`，请求/响应模型以 `apps/api/app/api/schemas/internal.py` 为唯一权威）：
 
 | 方法 | 路径 | 请求 | 响应 |
@@ -52,6 +54,9 @@
 | POST | `/internal/db/provision` | `{thread_id}` | `{game_id, database_url}` |
 | POST | `/internal/games/publish` | `{thread_id, name}` | `{game_id, version_id, seq, status, public_url}`（202，异步受理；同游戏在途发布返回 409） |
 | GET | `/internal/games/publish/status?thread_id=` | — | `{game_id, public_url, deploying, version}`（version 为最近一次发布） |
+| GET | `/internal/games/maps?thread_id=` | — | `string[]`（玩法图 id，按创建时间升序） |
+| GET | `/internal/games/maps/{map_id}?thread_id=` | — | 单图详情 `{game_id, map_id, title, revision, nodes, edges, created_at, updated_at}` |
+| PUT | `/internal/games/maps/{map_id}` | `{thread_id, title, nodes, edges}` | `{game_id, map_id, title, revision, node_count, edge_count, updated_at}` |
 
 - 常量集中：`apps/api/app/core/constants.py`、`apps/agent/agent/core/constants.py`。
 

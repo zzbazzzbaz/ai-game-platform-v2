@@ -6,6 +6,10 @@ class ValidationError(AppError):
     status_code = 400
 
 
+class UnprocessableError(AppError):
+    status_code = 422
+
+
 class ForbiddenError(AppError):
     status_code = 403
 

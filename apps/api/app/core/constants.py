@@ -42,6 +42,28 @@ VERSION_STATUS_DEPLOYED = "deployed"
 STATUS_ACTIVE = "active"
 STATUS_DISABLED = "disabled"
 
+# 沙盒续期（前端轮询；每次把剩余租期设为 5 分钟）
+SANDBOX_RENEW_TIMEOUT_SECONDS = 5 * 60
+
+# 玩法图（存平台库 game_maps；list 只返回 id，get 返回单图详情）
+GAME_MAP_ID_PATTERN = r"^[a-z](?:[a-z0-9-]{0,30}[a-z0-9])?$"
+GAME_MAP_NODE_ID_PATTERN = r"^[A-Za-z0-9_-]+$"
+GAME_MAP_TITLE_MAX_LENGTH = 20
+GAME_MAP_NODE_ID_MAX_LENGTH = 40
+GAME_MAP_NODE_TITLE_MAX_LENGTH = 30
+GAME_MAP_EDGE_TITLE_MAX_LENGTH = 30
+GAME_MAP_DETAIL_MAX_LENGTH = 200
+GAME_MAP_ATTRIBUTE_MAX_LENGTH = 40
+GAME_MAP_MAX_NODES = 40
+GAME_MAP_MAX_EDGES = 80
+GAME_MAP_MAX_ATTRIBUTES = 8
+GAME_MAP_NODE_KINDS = frozenset(
+    {"start", "action", "decision", "reward", "penalty", "end", "note", "value", "level"}
+)
+GAME_MAP_EDGE_KINDS = frozenset({"normal", "success", "failure", "loop"})
+GAME_MAP_DEFAULT_NODE_KIND = "action"
+GAME_MAP_DEFAULT_EDGE_KIND = "normal"
+
 # 文件块
 FILE_CHUNK_SIZE = 256 * 1024
 

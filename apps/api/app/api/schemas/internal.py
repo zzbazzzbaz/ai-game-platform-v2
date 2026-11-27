@@ -5,6 +5,7 @@ agent 侧本地模型必须与此保持一致。
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -61,3 +62,22 @@ class PublishStatusResponse(BaseModel):
     public_url: str | None
     deploying: bool
     version: PublishVersionInfo | None
+
+
+class SaveGameMapBody(BaseModel):
+    """整张覆盖保存玩法图；节点/连线内容由服务层逐项校验。"""
+
+    thread_id: uuid.UUID
+    title: str
+    nodes: list[dict[str, Any]]
+    edges: list[dict[str, Any]]
+
+
+class SaveGameMapResponse(BaseModel):
+    game_id: uuid.UUID
+    map_id: str
+    title: str
+    revision: int
+    node_count: int
+    edge_count: int
+    updated_at: datetime

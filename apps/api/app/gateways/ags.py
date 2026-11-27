@@ -72,6 +72,17 @@ class AgsGateway:
             raise UpstreamError(f"沙盒创建失败：{e}") from e
         return sandbox.sandbox_id, True
 
+    def renew(self, sandbox_id: str, *, timeout_seconds: int) -> bool:
+        """把沙盒剩余租期设为 timeout_seconds；沙盒已失效时返回 False。"""
+        sandbox = self.connect(sandbox_id)
+        if sandbox is None:
+            return False
+        try:
+            sandbox.set_timeout(timeout_seconds)
+        except Exception:
+            return False
+        return True
+
     def run(
         self, sandbox_id: str, command: str, *, user: str = "root", timeout: int = 60
     ) -> tuple[int, str, str]:

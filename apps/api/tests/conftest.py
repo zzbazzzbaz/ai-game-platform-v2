@@ -130,7 +130,8 @@ def _clean_tables(db_engine: Engine) -> Iterator[None]:
     with db_engine.begin() as conn:
         conn.execute(
             text(
-                f'TRUNCATE "{PLATFORM_SCHEMA}".game_threads, "{PLATFORM_SCHEMA}".games, '
+                f'TRUNCATE "{PLATFORM_SCHEMA}".game_maps, '
+                f'"{PLATFORM_SCHEMA}".game_threads, "{PLATFORM_SCHEMA}".games, '
                 f'"{PLATFORM_SCHEMA}".users CASCADE'
             )
         )

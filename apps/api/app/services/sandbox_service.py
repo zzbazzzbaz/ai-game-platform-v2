@@ -10,7 +10,11 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.core.constants import GAME_SERVER_ENSURE_COMMAND, GAME_SERVER_PORT
+from app.core.constants import (
+    GAME_SERVER_ENSURE_COMMAND,
+    GAME_SERVER_PORT,
+    SANDBOX_RENEW_TIMEOUT_SECONDS,
+)
 from app.core.exceptions import NotFoundError
 from app.gateways.ags import AgsGateway
 from app.gateways.cos import CosGateway
@@ -79,6 +83,23 @@ def ensure_for_thread(
         "game_id": locked.game_id,
         "sandbox_id": sandbox_id,
         "created": created,
+    }
+
+
+def renew_sandbox_for_thread(
+    *, thread_id: uuid.UUID, session: Session, ags: AgsGateway
+) -> dict[str, Any]:
+    """前端轮询续期：只续已有沙盒，不创建；失效时返回 renewed=False。"""
+    _thread, game = _resolve(thread_id, session)
+    sandbox_id = game.sandbox_id
+    renewed = False
+    if sandbox_id is not None:
+        renewed = ags.renew(sandbox_id, timeout_seconds=SANDBOX_RENEW_TIMEOUT_SECONDS)
+    return {
+        "thread_id": thread_id,
+        "sandbox_id": sandbox_id,
+        "renewed": renewed,
+        "timeout_seconds": SANDBOX_RENEW_TIMEOUT_SECONDS,
     }
 
 

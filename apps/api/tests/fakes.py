@@ -59,6 +59,7 @@ class FakeSandbox:
     created: ClassVar[list[str]] = []
     created_kwargs: ClassVar[list[dict[str, object]]] = []
     command_log: ClassVar[list[tuple[str, str]]] = []
+    timeouts: ClassVar[list[tuple[str, int]]] = []
     create_delay: ClassVar[float] = 0.0
     _ids: ClassVar[itertools.count[int]] = itertools.count(1)
 
@@ -71,6 +72,7 @@ class FakeSandbox:
         cls.created = []
         cls.created_kwargs = []
         cls.command_log = []
+        cls.timeouts = []
         cls.create_delay = 0.0
         cls._ids = itertools.count(1)
 
@@ -92,6 +94,9 @@ class FakeSandbox:
     @property
     def commands(self) -> _FakeCommands:
         return _FakeCommands(self)
+
+    def set_timeout(self, timeout: int) -> None:
+        FakeSandbox.timeouts.append((self.sandbox_id, timeout))
 
 
 class FakeCos(CosGateway):

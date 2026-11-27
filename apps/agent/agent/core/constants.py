@@ -9,6 +9,7 @@ ENSURE_SESSION_PATH = "/api/v1/internal/sessions/ensure"
 PROVISION_DATABASE_PATH = "/api/v1/internal/db/provision"
 PUBLISH_GAME_PATH = "/api/v1/internal/games/publish"
 PUBLISH_STATUS_PATH = "/api/v1/internal/games/publish/status"
+GAME_MAPS_PATH = "/api/v1/internal/games/maps"
 
 # 超时
 ENSURE_TIMEOUT_SECONDS = 900

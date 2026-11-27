@@ -8,6 +8,7 @@ import {
   LoaderCircle,
   MonitorPlay,
   Rocket,
+  Workflow,
 } from "lucide-react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -25,10 +26,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ChatPanel } from "@/features/chat/ChatPanel";
+import { ChatPanel, type ChatPanelHandle } from "@/features/chat/ChatPanel";
+import { GameMapsOverlay } from "@/features/maps/GameMapsOverlay";
 import { PreviewPanel } from "@/features/workbench/PreviewPanel";
 import { ThreadSidebar } from "@/features/workbench/ThreadSidebar";
 import { useVersions } from "@/features/workbench/useVersions";
+import { useSandboxRenewal } from "@/features/workbench/useSandboxRenewal";
 import { VersionsDrawer } from "@/features/workbench/VersionsDrawer";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -50,7 +53,10 @@ export function WorkbenchPage() {
 
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const [versionsOpen, setVersionsOpen] = React.useState(false);
+  const [mapsOpen, setMapsOpen] = React.useState(false);
+  const [chatGenerating, setChatGenerating] = React.useState(false);
   const [demoDialogOpen, setDemoDialogOpen] = React.useState(false);
+  const chatRef = React.useRef<ChatPanelHandle>(null);
   const autoCreateRef = React.useRef(false);
 
   // 由「生成体验版」带过来的提示词：只在本次跳转的会话里自动发送一次。
@@ -158,6 +164,19 @@ export function WorkbenchPage() {
 
   const threadId = threadIdParam ?? null;
   const preparingThread = threadId === null && !threadsQuery.isError;
+  const canUseMapAgent = threadId !== null && threadReadyQuery.isSuccess;
+
+  useSandboxRenewal(threadId);
+
+  const handleMapSendPrompt = (prompt: string) => {
+    setMapsOpen(false);
+    chatRef.current?.sendPrompt(prompt);
+  };
+
+  const handleMapFillPrompt = (prompt: string) => {
+    setMapsOpen(false);
+    chatRef.current?.fillPrompt(prompt);
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -216,6 +235,10 @@ export function WorkbenchPage() {
             <History />
             版本
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setMapsOpen(true)}>
+            <Workflow />
+            玩法图
+          </Button>
           <Button
             variant={previewOpen ? "default" : "outline"}
             size="sm"
@@ -252,10 +275,12 @@ export function WorkbenchPage() {
             threadReadyQuery.isSuccess ? (
               <ChatPanel
                 key={threadId}
+                ref={chatRef}
                 gameId={gameId}
                 threadId={threadId}
                 suggestions={SUGGESTIONS}
                 initialPrompt={kickoffPrompt}
+                onGeneratingChange={setChatGenerating}
                 onInitialPromptConsumed={() =>
                   navigate(location.pathname, { replace: true, state: null })
                 }
@@ -308,6 +333,16 @@ export function WorkbenchPage() {
         publicUrl={publicUrl}
         open={versionsOpen}
         onOpenChange={setVersionsOpen}
+      />
+
+      <GameMapsOverlay
+        gameId={gameId}
+        open={mapsOpen}
+        canUseAgent={canUseMapAgent}
+        isGenerating={chatGenerating}
+        onClose={() => setMapsOpen(false)}
+        onSendPrompt={handleMapSendPrompt}
+        onFillPrompt={handleMapFillPrompt}
       />
 
       <Dialog

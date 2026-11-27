@@ -1,6 +1,6 @@
 """内部接口调用（agent → api；契约权威：apps/api/app/api/schemas/internal.py）。"""
 
-from typing import Any
+from typing import Any, cast
 
 import httpx
 
@@ -14,13 +14,13 @@ class InternalApiError(Exception):
         self.status_code = status_code
 
 
-def call_internal(
+def _request(
     path: str,
-    payload: dict[str, Any] | None = None,
+    payload: dict[str, Any] | None,
     *,
     timeout: int,
-    method: str = "POST",
-) -> dict[str, Any]:
+    method: str,
+) -> httpx.Response:
     settings = get_settings()
     url = f"{settings.api_internal_url.rstrip('/')}{path}"
     try:
@@ -42,5 +42,31 @@ def call_internal(
             f"平台服务返回 {response.status_code}：{detail}",
             status_code=response.status_code,
         )
-    data: dict[str, Any] = response.json()
-    return data
+    return response
+
+
+def call_internal(
+    path: str,
+    payload: dict[str, Any] | None = None,
+    *,
+    timeout: int,
+    method: str = "POST",
+) -> dict[str, Any]:
+    """调用返回 JSON 对象的内部接口。"""
+    return cast(
+        dict[str, Any],
+        _request(path, payload, timeout=timeout, method=method).json(),
+    )
+
+
+def call_internal_list(
+    path: str,
+    *,
+    timeout: int,
+    method: str = "GET",
+) -> list[str]:
+    """调用返回字符串数组的内部接口（玩法图 id 列表）。"""
+    data: Any = _request(path, None, timeout=timeout, method=method).json()
+    if not isinstance(data, list):
+        raise InternalApiError("平台服务返回的列表格式不正确")
+    return [str(item) for item in data]

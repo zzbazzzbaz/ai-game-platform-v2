@@ -81,13 +81,15 @@ function composeMessage(text: string, assets: AssetResponse[]): string {
   return `${text}\n\n【附件记录】\n${assets.map(assetRecord).join("\n")}`;
 }
 
-export function ChatPanel({
-  gameId,
-  threadId,
-  suggestions,
-  initialPrompt = null,
-  onInitialPromptConsumed,
-}: {
+export interface ChatPanelHandle {
+  /** 直接发送一条消息（不附带待上传附件）。 */
+  sendPrompt: (text: string) => void;
+  /** 填入输入框但不发送。 */
+  fillPrompt: (text: string) => void;
+  isGenerating: () => boolean;
+}
+
+interface ChatPanelProps {
   gameId: string;
   threadId: string;
   suggestions: string[];
@@ -95,13 +97,28 @@ export function ChatPanel({
   initialPrompt?: string | null;
   /** 提示词已提交后回调，调用方负责清掉路由 state，避免刷新重发。 */
   onInitialPromptConsumed?: () => void;
-}) {
+  /** 当前会话是否正在生成（供顶栏按钮禁用）。 */
+  onGeneratingChange?: (generating: boolean) => void;
+}
+
+export const ChatPanel = React.forwardRef<ChatPanelHandle, ChatPanelProps>(function ChatPanel(
+  {
+    gameId,
+    threadId,
+    suggestions,
+    initialPrompt = null,
+    onInitialPromptConsumed,
+    onGeneratingChange,
+  },
+  ref,
+) {
   const [input, setInput] = React.useState("");
   const [lastSubmitted, setLastSubmitted] = React.useState<string | null>(null);
   const [pendingAssets, setPendingAssets] = React.useState<AssetResponse[]>([]);
   const [uploadingCount, setUploadingCount] = React.useState(0);
   const [uploadError, setUploadError] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const initialPromptPrefilledRef = React.useRef(false);
   const initialPromptSentRef = React.useRef(false);
@@ -160,14 +177,16 @@ export function ChatPanel({
     setPendingAssets((current) => current.filter((asset) => asset.asset_id !== assetId));
   };
 
-  const submit = (text: string) => {
+  const submit = (text: string, options?: { withAssets?: boolean }) => {
+    const withAssets = options?.withAssets ?? true;
+    const assets = withAssets ? pendingAssets : [];
     const trimmed = text.trim();
-    if ((!trimmed && pendingAssets.length === 0) || isLoading || uploadingCount > 0) return;
+    if ((!trimmed && assets.length === 0) || isLoading || uploadingCount > 0) return;
 
     // 长时间停留后 access_token 可能已过期：提交前先确保续期
     void ensureFreshToken();
 
-    const content = composeMessage(trimmed || "请查看我上传的附件。", pendingAssets);
+    const content = composeMessage(trimmed || "请查看我上传的附件。", assets);
     const toolResponses = ensureToolCallsHaveResponses(messages);
     const humanMessage = {
       id: crypto.randomUUID(),
@@ -193,7 +212,7 @@ export function ChatPanel({
     );
     setLastSubmitted(content);
     setInput("");
-    setPendingAssets([]);
+    if (withAssets) setPendingAssets([]);
     setUploadError(null);
   };
 
@@ -203,6 +222,23 @@ export function ChatPanel({
   React.useEffect(() => {
     submitRef.current = submit;
   });
+
+  React.useImperativeHandle(
+    ref,
+    () => ({
+      sendPrompt: (text: string) => submitRef.current(text, { withAssets: false }),
+      fillPrompt: (text: string) => {
+        setInput(text);
+        textareaRef.current?.focus();
+      },
+      isGenerating: () => isLoading,
+    }),
+    [isLoading],
+  );
+
+  React.useEffect(() => {
+    onGeneratingChange?.(isLoading);
+  }, [isLoading, onGeneratingChange]);
 
   // 体验版派生：先回填到输入框（自动发送失败时用户可以直接重发），
   // 等 LangGraph 线程加载完成后再提交一次。
@@ -352,6 +388,7 @@ export function ChatPanel({
             <Paperclip />
           </Button>
           <Textarea
+            ref={textareaRef}
             value={input}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={handleKeyDown}
@@ -386,4 +423,4 @@ export function ChatPanel({
       </div>
     </div>
   );
-}
+});
